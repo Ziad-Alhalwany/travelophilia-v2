@@ -1,34 +1,78 @@
 // src/components/Navbar.jsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
-const Navbar = () => {
+function Navbar() {
   return (
-    <header className="navbar">
-      <div className="navbar-left">
-        <span className="brand">Travelophilia</span>
-      </div>
+    <header className="site-header">
+      <div className="nav-container">
+        {/* Logo / Brand */}
+        <Link to="/" className="nav-logo">
+          <span className="nav-logo-mark">✈️</span>
+          <span className="nav-logo-text">
+            <span className="nav-logo-main">Travelophilia</span>
+            <span className="nav-logo-sub">Trips for humans, not tourists</span>
+          </span>
+        </Link>
 
-      <nav className="navbar-center">
-        <Link to="/">Home</Link>
-        <Link to="/about">About Us</Link>
-        <Link to="/support-team">Support Team</Link>
-        <Link to="/work-with-us">Work With Us</Link>
-        <Link to="/ticket-flight">Ticket Flight</Link>
-        <Link to="/choose-your-trip">Choose Your Trip</Link>
-        <Link to="/customize-your-trip">Customize Your Trip</Link>
-        <Link to="/transportation">Transportation</Link>
-        <Link to="/activities">Activities</Link>
-        <Link to="/visa">Visa & Others</Link>
-      </nav>
+        {/* Main navigation */}
+        <nav className="nav-links">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              isActive ? "nav-link nav-link-active" : "nav-link"
+            }
+          >
+            Home
+          </NavLink>
 
-      <div className="navbar-right">
-        {/* مكان زرار اللغة + العملة + Login/Signup بعدين */}
-        <button className="nav-btn-outline">Sign in</button>
-        <button className="nav-btn-primary">Join</button>
+          <NavLink
+            to="/choose-your-trip"
+            className={({ isActive }) =>
+              isActive ? "nav-link nav-link-active" : "nav-link"
+            }
+          >
+            🧳 Trips
+          </NavLink>
+
+          <NavLink
+            to="/customize-your-trip"
+            className={({ isActive }) =>
+              isActive ? "nav-link nav-link-active" : "nav-link"
+            }
+          >
+            🛠 Customize
+          </NavLink>
+
+          <NavLink
+            to="/about"
+            className={({ isActive }) =>
+              isActive ? "nav-link nav-link-active" : "nav-link"
+            }
+          >
+            ℹ️ About
+          </NavLink>
+        </nav>
+
+        {/* Right side actions */}
+        <div className="nav-actions">
+          <a
+            href="https://wa.me/201000000000"
+            target="_blank"
+            rel="noreferrer"
+            className="nav-icon-btn"
+          >
+            💬 <span className="nav-icon-label">WhatsApp</span>
+          </a>
+
+          <Link to="/customize-your-trip" className="btn-nav-primary">
+            Start a trip
+          </Link>
+        </div>
       </div>
     </header>
   );
-};
+}
 
 export default Navbar;

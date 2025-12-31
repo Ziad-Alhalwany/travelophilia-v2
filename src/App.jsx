@@ -1,45 +1,112 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+// src/App.jsx
+import { useEffect } from "react";
+import { Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
 
-import MainLayout from "./layouts/MainLayout";
+import Navbar from "./components/Navbar";
 
-// Pages
 import HomePage from "./pages/HomePage";
-import AboutPage from "./pages/AboutPage";
-import SupportTeamPage from "./pages/SupportTeamPage";
-import WorkWithUsPage from "./pages/WorkWithUsPage";
-import CollaborateWithUsPage from "./pages/CollaborateWithUsPage";
-import BeOneOfUsPage from "./pages/BeOneOfUsPage";
-import BeAmbassadorPage from "./pages/BeAmbassadorPage";
-import TicketFlightPage from "./pages/TicketFlightPage";
 import ChooseYourTripPage from "./pages/ChooseYourTripPage";
 import CustomizeYourTripPage from "./pages/CustomizeYourTripPage";
-import TransportationPage from "./pages/TransportationPage";
-import ActivitiesPage from "./pages/ActivitiesPage";
-import VisaPage from "./pages/VisaPage";
 import DestinationPage from "./pages/DestinationPage";
+import TripReservationPage from "./pages/TripReservationPage";
+import AfterSubmitPage from "./pages/AfterSubmitPage";
 
-function App() {
-  return (
-    <MainLayout>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/support-team" element={<SupportTeamPage />} />
-        <Route path="/work-with-us" element={<WorkWithUsPage />} />
-        <Route path="/collaborate-with-us" element={<CollaborateWithUsPage />} />
-        <Route path="/be-one-of-us" element={<BeOneOfUsPage />} />
-        <Route path="/be-ambassador" element={<BeAmbassadorPage />} />
-        <Route path="/ticket-flight" element={<TicketFlightPage />} />
-        <Route path="/choose-your-trip" element={<ChooseYourTripPage />} />
-        <Route path="/customize-your-trip" element={<CustomizeYourTripPage />} />
-        <Route path="/transportation" element={<TransportationPage />} />
-        <Route path="/activities" element={<ActivitiesPage />} />
-        <Route path="/visa" element={<VisaPage />} />
-        <Route path="/destinations/:slug" element={<DestinationPage />} />
-      </Routes>
-    </MainLayout>
-  );
+import CRMLoginPage from "./pages/CRMLoginPage";
+import CRMLeadsPage from "./pages/CRMLeadsPage";
+import { hasAccessToken } from "./services/crmAuth";
+
+function RequireCRMAuth() {
+  if (!hasAccessToken()) return <Navigate to="/crm/login" replace />;
+  return <Outlet />;
 }
 
-export default App;
+// ✅ لو حصل logout (أو refresh فشل) يوديك للوجين فورًا
+function CRMAuthEvents() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    function onLogout() {
+      navigate("/crm/login", { replace: true });
+    }
+    window.addEventListener("tp:crm:logout", onLogout);
+    return () => window.removeEventListener("tp:crm:logout", onLogout);
+  }, [navigate]);
+
+  return null;
+}
+
+export default function App() {
+  return (
+    <div className="app-shell">
+      <Navbar />
+
+      <main className="site-main">
+        <CRMAuthEvents />
+
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+
+          <Route path="/choose-your-trip" element={<ChooseYourTripPage />} />
+          <Route path="/trips" element={<Navigate to="/choose-your-trip" replace />} />
+
+          <Route path="/customize-your-trip" element={<CustomizeYourTripPage />} />
+          <Route path="/destinations/:slug" element={<DestinationPage />} />
+          <Route path="/reserve/:slug" element={<TripReservationPage />} />
+          <Route path="/after-submit" element={<AfterSubmitPage />} />
+
+          {/* CRM */}
+          <Route path="/crm/login" element={<CRMLoginPage />} />
+          <Route element={<RequireCRMAuth />}>
+            <Route path="/crm" element={<CRMLeadsPage />} />
+          </Route>
+
+          {/* fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+
+      <footer className="site-footer">
+        <div className="footer-inner">
+          <div className="footer-col">
+            <div className="footer-brand">
+              <span className="footer-logo-mark">✈️</span>
+              <span className="footer-logo-text">Travelophilia</span>
+            </div>
+            <p className="footer-text">
+              Trips crafted by humans, powered by smart tools — starting from Egypt and expanding beyond.
+            </p>
+          </div>
+
+          <div className="footer-col">
+            <h4 className="footer-title">Explore</h4>
+            <ul className="footer-links">
+              <li>
+                <a href="/choose-your-trip" className="footer-link">
+                  <span className="footer-link-text">Choose your trip</span>
+                </a>
+              </li>
+              <li>
+                <a href="/customize-your-trip" className="footer-link">
+                  <span className="footer-link-text">Customize a trip</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div className="footer-col">
+            <h4 className="footer-title">Contact</h4>
+            <p className="footer-text">
+              WhatsApp: +20 10 000 000 000
+              <br />
+              Instagram: @travelophilia
+            </p>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          <p className="footer-bottom-text">© {new Date().getFullYear()} Travelophilia. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
+}

@@ -1,0 +1,62 @@
+/* src/components/Button.css */
+
+.t-btn {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.18s ease-in-out;
+  white-space: nowrap;
+}
+
+.t-btn--full {
+  width: 100%;
+}
+
+/* Variants */
+
+.t-btn--primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.t-btn--primary:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+
+.t-btn--secondary {
+  background-color: #ffffff;
+  color: var(--color-text-main);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.t-btn--secondary:hover {
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+/* Sizes */
+
+.t-btn--sm {
+  padding: 6px 12px;
+  font-size: var(--text-xs);
+}
+
+.t-btn--md {
+  padding: 10px 18px;
+}
+
+.t-btn--lg {
+  padding: 12px 22px;
+  font-size: var(--text-md);
+}

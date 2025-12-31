@@ -1,93 +1,101 @@
 // src/pages/HomePage.jsx
 import React from "react";
+import { Link } from "react-router-dom";
 
-/**
- * Home Page
- * - Hero section (brand positioning)
- * - Quick view of main service categories
- */
-
-const HomePage = () => {
+function HomePage() {
   return (
-    <div>
-      {/* HERO SECTION */}
+    <div className="page home-page">
       <section className="hero">
-        <div>
-          <h1 className="hero-title">
-            Travel like a{" "}
-            <span className="hero-gradient">local</span>,  
-            plan like a <span className="hero-gradient">pro</span>.
-          </h1>
+        <div className="hero-grid">
+          <div className="hero-left">
+            <p className="hero-kicker">Travelophilia · Egypt & beyond</p>
+            <h1 className="hero-title">
+              Trips crafted by humans,
+              <br />
+              powered by smart tools.
+            </h1>
+            <p className="hero-subtitle">
+              Day-use escapes, custom trips, and curated experiences for
+              students, young professionals, and couples who want something
+              more than a generic package.
+            </p>
 
-          <p className="hero-subtitle">
-            Travelophilia helps you design, book, and manage trips across Egypt and beyond —
-            curated stays, authentic activities, and smart transportation in one place.
-          </p>
+            <div className="hero-cta-row">
+              <Link to="/customize-your-trip" className="btn-primary">
+                Customize your trip
+              </Link>
+              <Link to="/choose-your-trip" className="btn-ghost">
+                Browse ready-made trips
+              </Link>
+            </div>
 
-          <div className="hero-badges">
-            <span className="hero-badge">Egypt · Middle East · Coming Worldwide</span>
-            <span className="hero-badge">Solo · Family · Groups · Corporate</span>
+            <div className="hero-badges">
+              <span className="badge-soft">
+                Egypt-based team · Arabic & English support
+              </span>
+              <span className="badge-soft">
+                Perfect for students, couples & small groups
+              </span>
+            </div>
           </div>
 
-          <div className="hero-actions">
-            <button className="hero-cta-primary">
-              Choose your trip
-            </button>
-            <button className="hero-cta-secondary">
-              Customize your trip
-            </button>
-          </div>
-
-          <div className="hero-meta">
-            Real humans behind every trip · Multi-language · Multi-currency
-          </div>
-        </div>
-
-        <div className="hero-right">
-          <div className="hero-right-title">Start from what matters to you:</div>
-          <div className="hero-right-grid">
-            <div className="hero-pill">Weekends from Cairo</div>
-            <div className="hero-pill">Red Sea escapes</div>
-            <div className="hero-pill">Budget-friendly hostels</div>
-            <div className="hero-pill">Premium family stays</div>
-            <div className="hero-pill">Transportation only</div>
-            <div className="hero-pill">Activities & experiences</div>
+          <div className="hero-right">
+            <div className="hero-card">
+              <p className="hero-card-tag">Sample idea</p>
+              <h3 className="hero-card-title">
+                Day-use escape — Ain Sokhna
+              </h3>
+              <ul className="hero-card-list">
+                <li>Private or shared transport from Cairo</li>
+                <li>Pool & beach access in a selected resort</li>
+                <li>Optional add-ons: activities, photoshoot, cake</li>
+              </ul>
+              <p className="hero-card-meta">
+                This is just a demo card. Real trips will be loaded from the
+                trips database later.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* QUICK SECTIONS */}
-      <section className="section">
-        <h2 className="section-title">Main Services</h2>
-        <div className="card-grid">
-          <div className="card">
-            <div className="card-title">Trips & Packages</div>
-            <div className="card-sub">Curated itineraries for Solo, Families, Couples, and Groups.</div>
-          </div>
-          <div className="card">
-            <div className="card-title">Stays & Properties</div>
-            <div className="card-sub">Hotels, camps, hostels, chalets, and apartments.</div>
-          </div>
-          <div className="card">
-            <div className="card-title">Transportation</div>
-            <div className="card-sub">Private cars, shuttles, Nile cruise, city-to-city transfers.</div>
-          </div>
-          <div className="card">
-            <div className="card-title">Activities</div>
-            <div className="card-sub">Diving, safari, cultural tours, experiences & more.</div>
-          </div>
-          <div className="card">
-            <div className="card-title">Flight tickets</div>
-            <div className="card-sub">Ticket support and flight coordination for your trips.</div>
-          </div>
-          <div className="card">
-            <div className="card-title">Visa & Others</div>
-            <div className="card-sub">Visa guidance, documents, and extra services.</div>
-          </div>
+      <section className="home-section">
+        <header className="home-section-header">
+          <h2>Where do you want to start?</h2>
+          <p>
+            Different paths depending on whether you already know your
+            destination or just your budget and vibe.
+          </p>
+        </header>
+
+        <div className="home-grid">
+          <Link to="/choose-your-trip" className="home-card">
+            <h3>Choose your trip</h3>
+            <p>
+              Browse a curated list of trips and day-use options. Later this
+              will connect to the real /api/trips endpoint.
+            </p>
+          </Link>
+
+          <Link to="/customize-your-trip" className="home-card">
+            <h3>Customize from scratch</h3>
+            <p>
+              You tell us your dates, budget, and preferences. We come back
+              with a tailored plan.
+            </p>
+          </Link>
+
+          <Link to="/work-with-us" className="home-card">
+            <h3>Work with Travelophilia</h3>
+            <p>
+              For partners, vendors, and local guides who want to collaborate
+              on future experiences.
+            </p>
+          </Link>
         </div>
       </section>
     </div>
   );
-};
+}
 
 export default HomePage;

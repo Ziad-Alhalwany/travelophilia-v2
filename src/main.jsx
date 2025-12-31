@@ -1,12 +1,13 @@
+// src/main.jsx
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
-import "./styles.css"; // 👈 ده السطر الجديد
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+// ✅ استورد الملف اللي موجود فعلاً عندك
+import "./styles.css";
 
-root.render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <App />
