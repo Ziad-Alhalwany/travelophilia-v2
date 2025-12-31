@@ -3,14 +3,14 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const MainLayout = ({ children }) => {
+function MainLayout({ children }) {
   return (
-    <div className="app-root">
+    <div className="app-shell">
       <Navbar />
-      <main className="app-main">{children}</main>
+      <main className="site-main">{children}</main>
       <Footer />
     </div>
   );
-};
+}
 
 export default MainLayout;
