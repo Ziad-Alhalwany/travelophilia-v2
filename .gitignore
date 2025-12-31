@@ -28,3 +28,8 @@ backend/data/
 backend/django_api/db.sqlite3
 backend/django_api/media/
 backend/django_api/staticfiles/
+
+# Django env
+backend/django_api/.env
+backend/django_api/.env.*
+
