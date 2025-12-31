@@ -16,4 +16,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Python / Django
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/*.log
+
+# Django local db + local data
 backend/data/
+backend/django_api/db.sqlite3
+backend/django_api/media/
+backend/django_api/staticfiles/
