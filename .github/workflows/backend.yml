@@ -1,0 +1,55 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - "agent/**"
+      - "safe/**"
+      - "feature/**"
+      - "fix/**"
+      - "hotfix/**"
+      - "chore/**"
+  pull_request:
+    branches: [main]
+
+jobs:
+  django-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        working-directory: backend/django_api
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          elif [ -f ../requirements.txt ]; then
+            pip install -r ../requirements.txt
+          else
+            echo "❌ requirements.txt not found (backend/django_api/requirements.txt or backend/requirements.txt)"
+            exit 1
+          fi
+
+      - name: Django system check
+        working-directory: backend/django_api
+        env:
+          DJANGO_SETTINGS_MODULE: djconfig.settings
+        run: |
+          python manage.py check
+
+      - name: Check missing migrations
+        working-directory: backend/django_api
+        env:
+          DJANGO_SETTINGS_MODULE: djconfig.settings
+        run: |
+          python manage.py makemigrations --check --dry-run
