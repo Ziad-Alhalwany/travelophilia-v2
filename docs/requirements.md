@@ -365,4 +365,95 @@
 
 ---
 
+# Travelophilia — Requirements (Product)
+
+## 1) Scope (MVP → Production)
+### MVP must support
+- Browse trips (list)
+- View trip details
+- Submit a reservation (Trip Request)
+- View requests in CRM (internal)
+- Support STAY + DAYUSE types
+
+### Out of Scope (later)
+- Online payments
+- Full booking engine for hotels/transfers
+- Automated itinerary builder
+- Advanced CRM workflows (assignments, SLA, etc.)
+
+---
+
+## 2) Pages & UX (Customer)
+### Home
+- Brand promise: “Trips for humans, not tourists”
+- CTA: Start a trip / Choose your trip / Customize
+
+### Trips List (/choose-your-trip)
+- Show trip cards: title, location, type, base price, tags, rating (if exists)
+- Filter (later) by type/destination/price
+
+### Trip Details (/trips/:slug)
+- Show media (images/videos)
+- Show highlights + description
+- Show add-ons (activities) when available
+- Show checkout summary
+- CTA to reservation
+
+### Reservation (/reserve/:identifier)
+- Form validates required fields
+- Handles Egyptian vs non-Egyptian identity rules
+- Must submit successfully and create TripRequest
+- Must show success message + reference code
+
+### Customize trip (/customize)
+- Collect requirements and submit custom trip request
+- Must not break existing flows
+
+---
+
+## 3) Internal (CRM)
+### CRM Leads (/crm/leads or similar)
+- Show trip requests list
+- Show status/priority labels (not numeric)
+- Show internal code + lead code (for team)
+- Requires authentication
+
+---
+
+## 4) Backend Requirements
+### Trips
+- Must support lookup by slug OR public_code.
+- Must return stable fields; avoid breaking FE.
+
+### Trip Requests
+- Endpoint `POST /api/trip-requests/` expects snake_case.
+- Must validate:
+  - origin_city, destination_city, terms_accepted, depart_date, return_date, pax_total, adults_count, children_count
+  - identity rules:
+    - Egyptians: national id last4 required
+    - Non-Egyptians: passport last4 + entry_type_for_egypt required
+  - docs_acknowledged required when couples YES or children > 0
+
+### CRM
+- Protected endpoints.
+- Refresh token flow works.
+
+---
+
+## 5) Non-Functional Requirements
+- Reliability: no 500s in normal flows
+- Performance: trips list loads under 2 seconds locally
+- Security: auth protected CRM endpoints, no secrets in repo
+- Maintainability: hybrid naming policy enforced
+
+---
+
+## 6) Acceptance Criteria (Key Flows)
+1) Trips list loads and renders cards
+2) Trip details loads by slug
+3) Reservation page loads by public_code identifier
+4) Submitting reservation creates a TripRequest and shows success
+5) CRM shows the created request
+
+
 _هذا الملف يعمل كمرجع رسمي لمتطلبات مشروع Travelophilia، ويتم تحديثه عند أي تعديل جديد في الرؤية أو الخصائص._

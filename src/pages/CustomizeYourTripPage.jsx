@@ -1,15 +1,13 @@
 // src/pages/CustomizeYourTripPage.jsx
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { api } from "../services/apiClient";
 
+const SUBMIT_ENDPOINT = "/trip-requests/";
+const GENERATE_CODE_ENDPOINT = "/trip-requests/generate-code/";
+const ALLOW_PAST_DATES_FOR_TEAM = false;
 const DRAFT_KEY = "tp_customize_draft_v7";
 const WHATSAPP_NUMBER = "201030624545";
-
-const API_BASE = "http://127.0.0.1:8000/api";
-const SUBMIT_ENDPOINT = `${API_BASE}/trip-requests/`;
-const GENERATE_CODE_ENDPOINT = `${API_BASE}/trip-requests/generate-code/`;
-const ALLOW_PAST_DATES_FOR_TEAM = false;
 
 /** =========================
  * Options (MVP lists)
@@ -134,7 +132,9 @@ function onlyDigits(v = "") {
   return String(v).replace(/\D+/g, "");
 }
 function sanitizePassport(v = "") {
-  return String(v).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return String(v)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 }
 function todayISO() {
   const d = new Date();
@@ -144,7 +144,8 @@ function todayISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 function formatDMY(isoDate) {
-  if (!isoDate || typeof isoDate !== "string" || !isoDate.includes("-")) return "";
+  if (!isoDate || typeof isoDate !== "string" || !isoDate.includes("-"))
+    return "";
   const [y, m, d] = isoDate.split("-");
   if (!y || !m || !d) return "";
   return `${d}/${m}/${y}`;
@@ -203,6 +204,134 @@ function generateTripCode() {
 }
 function travelerCode(tripCode, index1) {
   return `${tripCode}-P${index1}`;
+}
+
+// =========================
+// ✅ TripRequest payload (snake_case)
+// =========================
+function buildTripRequestSnakePayload(
+  form,
+  { adults, children, totalPax, isSolo, needsDocs }
+) {
+  const leaderIsEg = isEgyptian(form.nationality);
+
+  const leaderPhone = `${String(form.dialCode || "").trim()}${onlyDigits(
+    form.phoneLocal
+  )}`;
+  const leaderWhatsapp = form.phoneHasWhatsapp
+    ? leaderPhone
+    : `${String(form.whatsappDialCode || "").trim()}${onlyDigits(
+        form.whatsappLocal
+      )}`;
+
+  const leaderIdentityRaw = leaderIsEg
+    ? onlyDigits(form.nationalId)
+    : sanitizePassport(form.passportNumber);
+  const leaderIdentityLast4 = (leaderIdentityRaw || "").slice(-4);
+
+  const companionsMode = isSolo
+    ? "SOLO"
+    : String(form.companionsMode || "").trim();
+
+  const travelers = (form.travelers || []).map((t, idx) => {
+    const tIsEg = isEgyptian(t.nationality);
+
+    const tPhone = `${String(t.dialCode || "").trim()}${onlyDigits(
+      t.phoneLocal
+    )}`;
+    const tWhatsapp = t.phoneHasWhatsapp
+      ? tPhone
+      : `${String(t.whatsappDialCode || "").trim()}${onlyDigits(
+          t.whatsappLocal
+        )}`;
+
+    const tIdentityRaw = tIsEg
+      ? onlyDigits(t.nationalId)
+      : sanitizePassport(t.passportNumber);
+    const tIdentityLast4 = (tIdentityRaw || "").slice(-4);
+
+    return {
+      index: idx + 1,
+      is_leader: idx === 0,
+
+      full_name: String(t.fullName || "").trim(),
+      gender: String(t.gender || "").trim(),
+      age: Number(t.age) || null,
+
+      phone: tPhone,
+      whatsapp: tWhatsapp,
+      email: String(t.email || "").trim(),
+
+      nationality: String(t.nationality || "").trim(),
+      resident_country: String(t.residentCountry || "").trim(),
+
+      identity_type: tIsEg ? "NATIONAL_ID" : "PASSPORT",
+      identity_last4: tIdentityLast4,
+
+      entry_type_for_egypt: tIsEg
+        ? ""
+        : String(t.entryStatusForEgypt || "").trim(),
+
+      origin_city: requiredText(t.originCityOverride)
+        ? String(t.originCityOverride).trim()
+        : String(form.originCity || "").trim(),
+    };
+  });
+
+  const childrenDetails = (form.childrenDetails || []).map((c, idx) => ({
+    child_index: idx + 1,
+    full_name: String(c.fullName || "").trim(),
+    age_group: String(c.ageGroup || "").trim(),
+    birth_cert_id: onlyDigits(c.birthCertId),
+  }));
+
+  return {
+    // Customize: غالباً مفيش trip_slug / trip_title
+    trip_slug: "",
+    trip_title: "",
+
+    origin_city: String(form.originCity || "").trim(),
+    destination_city: String(form.destinationCity || "").trim(),
+
+    depart_date: form.departDate || null,
+    return_date: form.returnDate || null,
+
+    adults_count: Number(adults) || 1,
+    children_count: Number(children) || 0,
+    pax_total: Number(totalPax) || 1,
+
+    companions_mode: companionsMode,
+
+    note: String(form.note || "").trim(),
+    couples_answer: String(form.couplesAnswer || "").trim(),
+
+    // ✅ دول كانوا سبب الرسالة بتاعة required
+    terms_accepted: !!form.termsAccepted,
+    docs_acknowledged: needsDocs
+      ? !!form.docsAcknowledged
+      : !!form.docsAcknowledged,
+
+    leader_full_name: String(form.fullName || "").trim(),
+    leader_phone: leaderPhone,
+    leader_whatsapp: leaderWhatsapp,
+    leader_email: String(form.email || "").trim(),
+
+    leader_gender: String(form.leaderGender || "").trim(),
+    leader_age: Number(form.leaderAge) || null,
+
+    leader_nationality: String(form.nationality || "").trim(),
+    leader_resident_country: String(form.residentCountry || "").trim(),
+
+    leader_identity_type: leaderIsEg ? "NATIONAL_ID" : "PASSPORT",
+    leader_identity_last4: leaderIdentityLast4,
+
+    entry_type_for_egypt: leaderIsEg
+      ? ""
+      : String(form.entryStatusForEgypt || "").trim(),
+
+    travelers,
+    children_details: childrenDetails,
+  };
 }
 
 /** =========================
@@ -295,7 +424,14 @@ function MaskedTextInput({
   );
 }
 
-function DataListInput({ value, onChange, onBlur, listId, placeholder, className = "" }) {
+function DataListInput({
+  value,
+  onChange,
+  onBlur,
+  listId,
+  placeholder,
+  className = "",
+}) {
   return (
     <input
       className={`input ${className}`}
@@ -327,7 +463,10 @@ export default function CustomizeYourTripPage() {
     try {
       const raw = localStorage.getItem(DRAFT_KEY);
       if (!raw) {
-        setForm((prev) => ({ ...prev, tripCode: prev.tripCode || generateTripCode() }));
+        setForm((prev) => ({
+          ...prev,
+          tripCode: prev.tripCode || generateTripCode(),
+        }));
         return;
       }
       const parsed = JSON.parse(raw);
@@ -336,43 +475,54 @@ export default function CustomizeYourTripPage() {
       const merged = { ...defaultForm(), ...parsed };
       merged.tripCode = merged.tripCode || generateTripCode();
 
-      merged.travelers = Array.isArray(parsed.travelers) ? parsed.travelers : defaultForm().travelers;
-      merged.childrenDetails = Array.isArray(parsed.childrenDetails) ? parsed.childrenDetails : [];
+      merged.travelers = Array.isArray(parsed.travelers)
+        ? parsed.travelers
+        : defaultForm().travelers;
+      merged.childrenDetails = Array.isArray(parsed.childrenDetails)
+        ? parsed.childrenDetails
+        : [];
 
       setForm(merged);
     } catch {
-      setForm((prev) => ({ ...prev, tripCode: prev.tripCode || generateTripCode() }));
+      setForm((prev) => ({
+        ...prev,
+        tripCode: prev.tripCode || generateTripCode(),
+      }));
     }
   }, []);
 
   // Trip Code (from system)
-useEffect(() => {
-  let cancelled = false;
+  useEffect(() => {
+    let cancelled = false;
 
-  async function getCode() {
-    try {
-      if (form.tripCode) return;
+    async function getCode() {
+      try {
+        if (form.tripCode) return;
 
-      const res = await axios.get(GENERATE_CODE_ENDPOINT);
-      const code = res?.data?.trip_code;
+        const res = await axios.get(GENERATE_CODE_ENDPOINT);
+        // apiClient بيحوّل response لـ camelCase
+        const code = res?.data?.tripCode || res?.data?.trip_code;
 
-      if (!cancelled && code) {
-        setForm((p) => ({ ...p, tripCode: code }));
-      }
-    } catch {
-      // fallback لو السيرفر واقع
-      if (!cancelled) {
-        setForm((p) => ({ ...p, tripCode: p.tripCode || generateTripCode() }));
+        if (!cancelled && code) {
+          setForm((p) => ({ ...p, tripCode: code }));
+        }
+      } catch {
+        // fallback لو السيرفر واقع
+        if (!cancelled) {
+          setForm((p) => ({
+            ...p,
+            tripCode: p.tripCode || generateTripCode(),
+          }));
+        }
       }
     }
-  }
 
-  getCode();
-  return () => {
-    cancelled = true;
-  };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [form.tripCode]);
+    getCode();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.tripCode]);
 
   // Persist draft
   useEffect(() => {
@@ -391,8 +541,14 @@ useEffect(() => {
     setAttempted((prev) => ({ ...prev, [stepKey]: true }));
   }
 
-  const adults = useMemo(() => Math.max(1, Number(form.adults) || 1), [form.adults]);
-  const children = useMemo(() => Math.max(0, Number(form.children) || 0), [form.children]);
+  const adults = useMemo(
+    () => Math.max(1, Number(form.adults) || 1),
+    [form.adults]
+  );
+  const children = useMemo(
+    () => Math.max(0, Number(form.children) || 0),
+    [form.children]
+  );
   const totalPax = adults + children;
   const isSolo = totalPax === 1;
 
@@ -404,7 +560,9 @@ useEffect(() => {
   const shouldAskEntryStatusLeader = !leaderIsEgyptian;
 
   const minDepart = ALLOW_PAST_DATES_FOR_TEAM ? undefined : todayISO();
-  const minReturn = ALLOW_PAST_DATES_FOR_TEAM ? undefined : form.departDate || todayISO();
+  const minReturn = ALLOW_PAST_DATES_FOR_TEAM
+    ? undefined
+    : form.departDate || todayISO();
 
   const datesValid = useMemo(() => {
     if (!form.departDate || !form.returnDate) return false;
@@ -414,7 +572,9 @@ useEffect(() => {
   // Resize children details
   useEffect(() => {
     setForm((prev) => {
-      const current = Array.isArray(prev.childrenDetails) ? prev.childrenDetails : [];
+      const current = Array.isArray(prev.childrenDetails)
+        ? prev.childrenDetails
+        : [];
       const resized = Array.from({ length: children }, (_, i) => {
         return current[i] || { fullName: "", ageGroup: "", birthCertId: "" };
       });
@@ -514,7 +674,14 @@ useEffect(() => {
     // AFTER_SUBMIT دايمًا بعد REVIEW
     if (isSolo) return ["LEADER", "NOTE", "REVIEW", "AFTER_SUBMIT"];
     if (form.companionsMode === "NOW")
-      return ["LEADER", "COMP_MODE", "COMP_DETAILS", "NOTE", "REVIEW", "AFTER_SUBMIT"];
+      return [
+        "LEADER",
+        "COMP_MODE",
+        "COMP_DETAILS",
+        "NOTE",
+        "REVIEW",
+        "AFTER_SUBMIT",
+      ];
     return ["LEADER", "COMP_MODE", "NOTE", "REVIEW", "AFTER_SUBMIT"];
   }, [isSolo, form.companionsMode]);
 
@@ -540,7 +707,8 @@ useEffect(() => {
 
   const leaderWhatsappOk =
     form.phoneHasWhatsapp === true ||
-    (requiredText(form.whatsappDialCode) && isValidPhoneLocalDigits(leaderWhatsappDigits));
+    (requiredText(form.whatsappDialCode) &&
+      isValidPhoneLocalDigits(leaderWhatsappDigits));
 
   function leaderStepValid() {
     const baseOk =
@@ -575,7 +743,11 @@ useEffect(() => {
     } else {
       const p = sanitizePassport(form.passportNumber);
       if (p.length < 5) return false;
-      if (form.entryStatusForEgypt !== "RESIDENCE" && form.entryStatusForEgypt !== "TOURIST") return false;
+      if (
+        form.entryStatusForEgypt !== "RESIDENCE" &&
+        form.entryStatusForEgypt !== "TOURIST"
+      )
+        return false;
     }
     return true;
   }
@@ -591,13 +763,19 @@ useEffect(() => {
     for (let i = 0; i < arr.length; i++) {
       const t = arr[i];
 
-      if (!requiredText(t.fullName) || !requiredText(t.gender) || !requiredText(t.age)) return false;
+      if (
+        !requiredText(t.fullName) ||
+        !requiredText(t.gender) ||
+        !requiredText(t.age)
+      )
+        return false;
 
       const ageNum = Number(t.age);
       if (!Number.isFinite(ageNum) || ageNum < 18) return false;
 
       const td = onlyDigits(t.phoneLocal);
-      if (!requiredText(t.dialCode) || !isValidPhoneLocalDigits(td)) return false;
+      if (!requiredText(t.dialCode) || !isValidPhoneLocalDigits(td))
+        return false;
 
       const tWDigits = onlyDigits(t.whatsappLocal);
       const tWhatsappOk =
@@ -607,7 +785,8 @@ useEffect(() => {
 
       if (!requiredText(t.email) || !isValidEmail(t.email)) return false;
 
-      if (!requiredText(t.nationality) || !requiredText(t.residentCountry)) return false;
+      if (!requiredText(t.nationality) || !requiredText(t.residentCountry))
+        return false;
       const tEgypt = isEgyptian(t.nationality);
 
       if (tEgypt) {
@@ -616,13 +795,22 @@ useEffect(() => {
       } else {
         const p = sanitizePassport(t.passportNumber);
         if (p.length < 5) return false;
-        if (t.entryStatusForEgypt !== "RESIDENCE" && t.entryStatusForEgypt !== "TOURIST") return false;
+        if (
+          t.entryStatusForEgypt !== "RESIDENCE" &&
+          t.entryStatusForEgypt !== "TOURIST"
+        )
+          return false;
       }
     }
 
     if (children > 0) {
       for (const c of form.childrenDetails || []) {
-        if (!requiredText(c.fullName) || !requiredText(c.ageGroup) || !requiredText(c.birthCertId)) return false;
+        if (
+          !requiredText(c.fullName) ||
+          !requiredText(c.ageGroup) ||
+          !requiredText(c.birthCertId)
+        )
+          return false;
         const id = onlyDigits(c.birthCertId);
         if (id.length < 5) return false;
       }
@@ -632,7 +820,8 @@ useEffect(() => {
   }
 
   function reviewValid() {
-    const couplesOk = form.couplesAnswer === "YES" || form.couplesAnswer === "NO";
+    const couplesOk =
+      form.couplesAnswer === "YES" || form.couplesAnswer === "NO";
     const termsOk = !!form.termsAccepted;
     const docsOk = needsDocs ? !!form.docsAcknowledged : true;
     return couplesOk && termsOk && docsOk;
@@ -641,7 +830,9 @@ useEffect(() => {
   function buildSystemPayload(action = "submit") {
     const travelers = (form.travelers || []).map((t, idx) => {
       const isEg = isEgyptian(t.nationality);
-      const identity = isEg ? onlyDigits(t.nationalId) : sanitizePassport(t.passportNumber);
+      const identity = isEg
+        ? onlyDigits(t.nationalId)
+        : sanitizePassport(t.passportNumber);
 
       const phone = `${t.dialCode}${onlyDigits(t.phoneLocal)}`;
       const wa = t.phoneHasWhatsapp
@@ -661,7 +852,9 @@ useEffect(() => {
         identityType: isEg ? "NATIONAL_ID" : "PASSPORT",
         identityNumber: identity,
         egyptEntryStatus: isEg ? "" : t.entryStatusForEgypt,
-        originCity: requiredText(t.originCityOverride) ? t.originCityOverride : form.originCity,
+        originCity: requiredText(t.originCityOverride)
+          ? t.originCityOverride
+          : form.originCity,
       };
     });
 
@@ -697,64 +890,40 @@ useEffect(() => {
   }
 
   async function persistToSystem() {
-  setSysSave({ status: "saving", error: "" });
+    setSysSave({ status: "saving", error: "" });
 
-  try {
-    const payload = {
-      tripCode_in: form.tripCode,
+    try {
+      const payload = buildTripRequestSnakePayload(form, {
+        adults,
+        children,
+        totalPax,
+        isSolo: totalPax === 1,
+        needsDocs,
+      });
 
-      fullName: form.fullName,
-      dialCode: form.dialCode,
-      phoneLocal: form.phoneLocal,
-      phoneHasWhatsapp: form.phoneHasWhatsapp,
-      whatsappDialCode: form.whatsappDialCode,
-      whatsappLocal: form.whatsappLocal,
+      const res = await api.post(SUBMIT_ENDPOINT, payload);
 
-      email: form.email,
-      leaderGender: form.leaderGender,
-      leaderAge: form.leaderAge,
+      // ✅ لو السيرفر رجّع trip_code الحقيقي نخزّنه بدل اللي متولد محليًا
+      const serverTripCode =
+        res?.data?.trip_code ||
+        res?.data?.tripCode ||
+        res?.data?.trip_code_internal ||
+        "";
 
-      nationality: form.nationality,
-      residentCountry: form.residentCountry,
-      nationalId: form.nationalId,
-      passportNumber: form.passportNumber,
-      entryStatusForEgypt: form.entryStatusForEgypt,
+      if (serverTripCode) {
+        setForm((p) => ({ ...p, tripCode: serverTripCode }));
+      }
 
-      originCity: form.originCity,
-      destinationCity: form.destinationCity,
-      departDate: form.departDate,
-      returnDate: form.returnDate,
-
-      adults: form.adults,
-      children: form.children,
-
-      companionsMode: totalPax === 1 ? "SOLO" : form.companionsMode,
-
-      travelers: form.travelers,
-      childrenDetails: form.childrenDetails,
-
-      note: (form.note || "").trim(),
-
-      couplesAnswer: form.couplesAnswer,
-      termsAccepted: !!form.termsAccepted,
-      docsAcknowledged: !!form.docsAcknowledged,
-    };
-
-    await axios.post(SUBMIT_ENDPOINT, payload, {
-      headers: { "Content-Type": "application/json" },
-    });
-
-    setSysSave({ status: "success", error: "" });
-    return true;
-  } catch (err) {
-    const msg =
-      err?.response?.data
+      setSysSave({ status: "success", error: "" });
+      return true;
+    } catch (err) {
+      const msg = err?.response?.data
         ? JSON.stringify(err.response.data)
         : err?.message || "Failed to submit";
-    setSysSave({ status: "error", error: msg });
-    return false;
+      setSysSave({ status: "error", error: msg });
+      return false;
+    }
   }
-}
 
   function buildWhatsAppLink() {
     const lines = [];
@@ -769,17 +938,23 @@ useEffect(() => {
     for (let i = 0; i < list.length; i++) {
       const t = list[i];
       const isEg = isEgyptian(t.nationality);
-      const idRaw = isEg ? onlyDigits(t.nationalId) : sanitizePassport(t.passportNumber);
+      const idRaw = isEg
+        ? onlyDigits(t.nationalId)
+        : sanitizePassport(t.passportNumber);
 
       const phone = `${t.dialCode}${onlyDigits(t.phoneLocal)}`;
       const wa = t.phoneHasWhatsapp
         ? phone
         : `${t.whatsappDialCode}${onlyDigits(t.whatsappLocal)}`;
 
-      const origin = requiredText(t.originCityOverride) ? t.originCityOverride : form.originCity;
+      const origin = requiredText(t.originCityOverride)
+        ? t.originCityOverride
+        : form.originCity;
 
       lines.push(
-        `- ${travelerCode(form.tripCode, i + 1)} | ${t.fullName} | ${wa} | ${t.nationality} | ${last4Display(idRaw)} | From: ${origin}`
+        `- ${travelerCode(form.tripCode, i + 1)} | ${t.fullName} | ${wa} | ${
+          t.nationality
+        } | ${last4Display(idRaw)} | From: ${origin}`
       );
     }
 
@@ -787,15 +962,22 @@ useEffect(() => {
     lines.push(`Trip:`);
     lines.push(`From: ${form.originCity}`);
     lines.push(`To: ${form.destinationCity}`);
-    lines.push(`Dates: ${formatDMY(form.departDate)} → ${formatDMY(form.returnDate)}`);
+    lines.push(
+      `Dates: ${formatDMY(form.departDate)} → ${formatDMY(form.returnDate)}`
+    );
     lines.push(`Pax: ${totalPax} (Adults ${adults}, Children ${children})`);
-    if (!leaderIsEgyptian) lines.push(`Egypt entry status: ${residenceLabel(form.entryStatusForEgypt)}`);
+    if (!leaderIsEgyptian)
+      lines.push(
+        `Egypt entry status: ${residenceLabel(form.entryStatusForEgypt)}`
+      );
 
     lines.push("");
     lines.push(`Couples: ${form.couplesAnswer === "YES" ? "Yes" : "No"}`);
     lines.push(`Confirmation requires 50% deposit.`);
 
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+      lines.join("\n")
+    )}`;
   }
 
   function clearDraft() {
@@ -880,7 +1062,11 @@ useEffect(() => {
         {COUNTRY_OPTIONS.slice()
           .sort((a, b) => a.name.localeCompare(b.name))
           .map((c) => (
-            <option key={c.iso2} value={c.name} label={`${flagEmoji(c.iso2)} ${c.name}`} />
+            <option
+              key={c.iso2}
+              value={c.name}
+              label={`${flagEmoji(c.iso2)} ${c.name}`}
+            />
           ))}
       </datalist>
 
@@ -888,7 +1074,11 @@ useEffect(() => {
         {NATIONALITY_OPTIONS.slice()
           .sort((a, b) => a.name.localeCompare(b.name))
           .map((c) => (
-            <option key={c.iso2} value={c.name} label={`${flagEmoji(c.iso2)} ${c.name}`} />
+            <option
+              key={c.iso2}
+              value={c.name}
+              label={`${flagEmoji(c.iso2)} ${c.name}`}
+            />
           ))}
       </datalist>
 
@@ -931,7 +1121,10 @@ useEffect(() => {
               <label>
                 Full name <span className="page-error">*</span>
                 <input
-                  className={`input ${inputClass("fullName", requiredText(form.fullName))}`}
+                  className={`input ${inputClass(
+                    "fullName",
+                    requiredText(form.fullName)
+                  )}`}
                   value={form.fullName}
                   onChange={(e) => update("fullName", e.target.value)}
                   onBlur={blur("fullName")}
@@ -948,12 +1141,20 @@ useEffect(() => {
                     onBlur={blur("dialCode")}
                     listId="tpDialCodesList"
                     placeholder="+20"
-                    className={inputClass("dialCode", requiredText(form.dialCode))}
+                    className={inputClass(
+                      "dialCode",
+                      requiredText(form.dialCode)
+                    )}
                   />
                   <input
-                    className={`input ${inputClass("phoneLocal", isValidPhoneLocalDigits(onlyDigits(form.phoneLocal)))}`}
+                    className={`input ${inputClass(
+                      "phoneLocal",
+                      isValidPhoneLocalDigits(onlyDigits(form.phoneLocal))
+                    )}`}
                     value={form.phoneLocal}
-                    onChange={(e) => update("phoneLocal", onlyDigits(e.target.value))}
+                    onChange={(e) =>
+                      update("phoneLocal", onlyDigits(e.target.value))
+                    }
                     onBlur={blur("phoneLocal")}
                     placeholder="Number"
                   />
@@ -975,16 +1176,26 @@ useEffect(() => {
                   <div className="tp-phone-row">
                     <DataListInput
                       value={form.whatsappDialCode}
-                      onChange={(e) => update("whatsappDialCode", e.target.value)}
+                      onChange={(e) =>
+                        update("whatsappDialCode", e.target.value)
+                      }
                       onBlur={blur("whatsappDialCode")}
                       listId="tpDialCodesList"
                       placeholder="+20"
-                      className={inputClass("whatsappDialCode", requiredText(form.whatsappDialCode))}
+                      className={inputClass(
+                        "whatsappDialCode",
+                        requiredText(form.whatsappDialCode)
+                      )}
                     />
                     <input
-                      className={`input ${inputClass("whatsappLocal", isValidPhoneLocalDigits(onlyDigits(form.whatsappLocal)))}`}
+                      className={`input ${inputClass(
+                        "whatsappLocal",
+                        isValidPhoneLocalDigits(onlyDigits(form.whatsappLocal))
+                      )}`}
                       value={form.whatsappLocal}
-                      onChange={(e) => update("whatsappLocal", onlyDigits(e.target.value))}
+                      onChange={(e) =>
+                        update("whatsappLocal", onlyDigits(e.target.value))
+                      }
                       onBlur={blur("whatsappLocal")}
                       placeholder="WhatsApp number"
                     />
@@ -995,7 +1206,10 @@ useEffect(() => {
               <label>
                 Email <span className="page-error">*</span>
                 <input
-                  className={`input ${inputClass("email", isValidEmail(form.email))}`}
+                  className={`input ${inputClass(
+                    "email",
+                    isValidEmail(form.email)
+                  )}`}
                   value={form.email}
                   onChange={(e) => update("email", e.target.value)}
                   onBlur={blur("email")}
@@ -1007,7 +1221,10 @@ useEffect(() => {
                 <label>
                   Gender <span className="page-error">*</span>
                   <select
-                    className={`input ${inputClass("leaderGender", requiredText(form.leaderGender))}`}
+                    className={`input ${inputClass(
+                      "leaderGender",
+                      requiredText(form.leaderGender)
+                    )}`}
                     value={form.leaderGender}
                     onChange={(e) => update("leaderGender", e.target.value)}
                     onBlur={blur("leaderGender")}
@@ -1021,9 +1238,14 @@ useEffect(() => {
                 <label>
                   Age <span className="page-error">*</span>
                   <input
-                    className={`input ${inputClass("leaderAge", Number(form.leaderAge) >= 18)}`}
+                    className={`input ${inputClass(
+                      "leaderAge",
+                      Number(form.leaderAge) >= 18
+                    )}`}
                     value={form.leaderAge}
-                    onChange={(e) => update("leaderAge", onlyDigits(e.target.value))}
+                    onChange={(e) =>
+                      update("leaderAge", onlyDigits(e.target.value))
+                    }
                     onBlur={blur("leaderAge")}
                     placeholder="e.g. 23"
                   />
@@ -1042,7 +1264,10 @@ useEffect(() => {
                   onBlur={blur("nationality")}
                   listId="tpNationalityList"
                   placeholder="Type to search..."
-                  className={inputClass("nationality", requiredText(form.nationality))}
+                  className={inputClass(
+                    "nationality",
+                    requiredText(form.nationality)
+                  )}
                 />
               </label>
 
@@ -1054,7 +1279,10 @@ useEffect(() => {
                   onBlur={blur("residentCountry")}
                   listId="tpCountryList"
                   placeholder="Type to search..."
-                  className={inputClass("residentCountry", requiredText(form.residentCountry))}
+                  className={inputClass(
+                    "residentCountry",
+                    requiredText(form.residentCountry)
+                  )}
                 />
               </label>
 
@@ -1067,7 +1295,10 @@ useEffect(() => {
                     placeholder="National ID"
                     inputMode="numeric"
                     maxLength={14}
-                    className={inputClass("nationalId", onlyDigits(form.nationalId).length === 14)}
+                    className={inputClass(
+                      "nationalId",
+                      onlyDigits(form.nationalId).length === 14
+                    )}
                   />
                 </label>
               )}
@@ -1078,10 +1309,15 @@ useEffect(() => {
                     Passport number <span className="page-error">*</span>
                     <MaskedTextInput
                       value={form.passportNumber}
-                      onValueChange={(v) => update("passportNumber", sanitizePassport(v))}
+                      onValueChange={(v) =>
+                        update("passportNumber", sanitizePassport(v))
+                      }
                       placeholder="Passport number"
                       maxLength={20}
-                      className={inputClass("passportNumber", sanitizePassport(form.passportNumber).length >= 5)}
+                      className={inputClass(
+                        "passportNumber",
+                        sanitizePassport(form.passportNumber).length >= 5
+                      )}
                     />
                   </label>
 
@@ -1091,10 +1327,13 @@ useEffect(() => {
                       <select
                         className={`input ${inputClass(
                           "entryStatusForEgypt",
-                          form.entryStatusForEgypt === "RESIDENCE" || form.entryStatusForEgypt === "TOURIST"
+                          form.entryStatusForEgypt === "RESIDENCE" ||
+                            form.entryStatusForEgypt === "TOURIST"
                         )}`}
                         value={form.entryStatusForEgypt}
-                        onChange={(e) => update("entryStatusForEgypt", e.target.value)}
+                        onChange={(e) =>
+                          update("entryStatusForEgypt", e.target.value)
+                        }
                         onBlur={blur("entryStatusForEgypt")}
                       >
                         <option value="">Select</option>
@@ -1114,7 +1353,10 @@ useEffect(() => {
                 <label>
                   Departure city <span className="page-error">*</span>
                   <input
-                    className={`input ${inputClass("originCity", requiredText(form.originCity))}`}
+                    className={`input ${inputClass(
+                      "originCity",
+                      requiredText(form.originCity)
+                    )}`}
                     value={form.originCity}
                     onChange={(e) => update("originCity", e.target.value)}
                     onBlur={blur("originCity")}
@@ -1125,7 +1367,10 @@ useEffect(() => {
                 <label>
                   Destination city <span className="page-error">*</span>
                   <input
-                    className={`input ${inputClass("destinationCity", requiredText(form.destinationCity))}`}
+                    className={`input ${inputClass(
+                      "destinationCity",
+                      requiredText(form.destinationCity)
+                    )}`}
                     value={form.destinationCity}
                     onChange={(e) => update("destinationCity", e.target.value)}
                     onBlur={blur("destinationCity")}
@@ -1139,7 +1384,10 @@ useEffect(() => {
                   Departure date <span className="page-error">*</span>
                   <input
                     type="date"
-                    className={`input ${inputClass("departDate", requiredText(form.departDate) && !!datesValid)}`}
+                    className={`input ${inputClass(
+                      "departDate",
+                      requiredText(form.departDate) && !!datesValid
+                    )}`}
                     value={form.departDate}
                     min={minDepart}
                     onChange={(e) => update("departDate", e.target.value)}
@@ -1151,7 +1399,10 @@ useEffect(() => {
                   Return date <span className="page-error">*</span>
                   <input
                     type="date"
-                    className={`input ${inputClass("returnDate", requiredText(form.returnDate) && !!datesValid)}`}
+                    className={`input ${inputClass(
+                      "returnDate",
+                      requiredText(form.returnDate) && !!datesValid
+                    )}`}
                     value={form.returnDate}
                     min={minReturn}
                     onChange={(e) => update("returnDate", e.target.value)}
@@ -1166,7 +1417,10 @@ useEffect(() => {
                   <input
                     type="number"
                     min={1}
-                    className={`input ${inputClass("adults", Number(form.adults) >= 1)}`}
+                    className={`input ${inputClass(
+                      "adults",
+                      Number(form.adults) >= 1
+                    )}`}
                     value={form.adults}
                     onChange={(e) => update("adults", Number(e.target.value))}
                     onBlur={blur("adults")}
@@ -1178,7 +1432,10 @@ useEffect(() => {
                   <input
                     type="number"
                     min={0}
-                    className={`input ${inputClass("children", Number(form.children) >= 0)}`}
+                    className={`input ${inputClass(
+                      "children",
+                      Number(form.children) >= 0
+                    )}`}
                     value={form.children}
                     onChange={(e) => update("children", Number(e.target.value))}
                     onBlur={blur("children")}
@@ -1188,7 +1445,12 @@ useEffect(() => {
             </div>
 
             <div className="form-actions">
-              <button className="btn-primary" disabled={!leaderStepValid()} onClick={goNext} type="button">
+              <button
+                className="btn-primary"
+                disabled={!leaderStepValid()}
+                onClick={goNext}
+                type="button"
+              >
                 Continue
               </button>
             </div>
@@ -1231,7 +1493,9 @@ useEffect(() => {
                 </label>
               </div>
 
-              {attempted["COMP_MODE"] && !compModeValid() && <p className="page-error">Required.</p>}
+              {attempted["COMP_MODE"] && !compModeValid() && (
+                <p className="page-error">Required.</p>
+              )}
             </div>
 
             <div className="form-actions">
@@ -1276,7 +1540,11 @@ useEffect(() => {
                   </label>
                   <label>
                     Traveler code
-                    <input className="input" value={travelerCode(form.tripCode, 1)} disabled />
+                    <input
+                      className="input"
+                      value={travelerCode(form.tripCode, 1)}
+                      disabled
+                    />
                   </label>
                 </div>
 
@@ -1287,7 +1555,11 @@ useEffect(() => {
                   </label>
                   <label>
                     Phone
-                    <input className="input" value={`${form.dialCode}${onlyDigits(form.phoneLocal)}`} disabled />
+                    <input
+                      className="input"
+                      value={`${form.dialCode}${onlyDigits(form.phoneLocal)}`}
+                      disabled
+                    />
                   </label>
                 </div>
 
@@ -1296,13 +1568,21 @@ useEffect(() => {
                     ID / Passport
                     <input
                       className="input"
-                      value={last4Display(leaderIsEgyptian ? onlyDigits(form.nationalId) : sanitizePassport(form.passportNumber))}
+                      value={last4Display(
+                        leaderIsEgyptian
+                          ? onlyDigits(form.nationalId)
+                          : sanitizePassport(form.passportNumber)
+                      )}
                       disabled
                     />
                   </label>
                   <label>
                     Destination
-                    <input className="input" value={form.destinationCity} disabled />
+                    <input
+                      className="input"
+                      value={form.destinationCity}
+                      disabled
+                    />
                   </label>
                 </div>
               </div>
@@ -1318,7 +1598,8 @@ useEffect(() => {
                   const tPhoneOk = isValidPhoneLocalDigits(tPhoneDigits);
                   const tWhatsappOk =
                     t.phoneHasWhatsapp === true ||
-                    (requiredText(t.whatsappDialCode) && isValidPhoneLocalDigits(tWhatsappDigits));
+                    (requiredText(t.whatsappDialCode) &&
+                      isValidPhoneLocalDigits(tWhatsappDigits));
 
                   const tIdOk = tIsEgyptian
                     ? onlyDigits(t.nationalId).length === 14
@@ -1326,23 +1607,34 @@ useEffect(() => {
 
                   const tEntryOk = tIsEgyptian
                     ? true
-                    : t.entryStatusForEgypt === "RESIDENCE" || t.entryStatusForEgypt === "TOURIST";
+                    : t.entryStatusForEgypt === "RESIDENCE" ||
+                      t.entryStatusForEgypt === "TOURIST";
 
                   return (
                     <div key={realIndex} className="tp-card">
-                      <div className="tp-card-title">Traveler {realIndex + 1}</div>
+                      <div className="tp-card-title">
+                        Traveler {realIndex + 1}
+                      </div>
 
                       <div className="field-row">
                         <label>
                           Traveler code
-                          <input className="input" value={travelerCode(form.tripCode, realIndex + 1)} disabled />
+                          <input
+                            className="input"
+                            value={travelerCode(form.tripCode, realIndex + 1)}
+                            disabled
+                          />
                         </label>
                         <label>
                           Departure city
                           <input
                             className="input"
                             value={t.originCityOverride || ""}
-                            onChange={(e) => updateTraveler(realIndex, { originCityOverride: e.target.value })}
+                            onChange={(e) =>
+                              updateTraveler(realIndex, {
+                                originCityOverride: e.target.value,
+                              })
+                            }
                             placeholder=""
                           />
                         </label>
@@ -1352,9 +1644,18 @@ useEffect(() => {
                         <label>
                           Full name <span className="page-error">*</span>
                           <input
-                            className={`input ${attempted["COMP_DETAILS"] && !requiredText(t.fullName) ? "tp-error" : ""}`}
+                            className={`input ${
+                              attempted["COMP_DETAILS"] &&
+                              !requiredText(t.fullName)
+                                ? "tp-error"
+                                : ""
+                            }`}
                             value={t.fullName || ""}
-                            onChange={(e) => updateTraveler(realIndex, { fullName: e.target.value })}
+                            onChange={(e) =>
+                              updateTraveler(realIndex, {
+                                fullName: e.target.value,
+                              })
+                            }
                             placeholder="Full name"
                           />
                         </label>
@@ -1362,9 +1663,18 @@ useEffect(() => {
                         <label>
                           Gender <span className="page-error">*</span>
                           <select
-                            className={`input ${attempted["COMP_DETAILS"] && !requiredText(t.gender) ? "tp-error" : ""}`}
+                            className={`input ${
+                              attempted["COMP_DETAILS"] &&
+                              !requiredText(t.gender)
+                                ? "tp-error"
+                                : ""
+                            }`}
                             value={t.gender || ""}
-                            onChange={(e) => updateTraveler(realIndex, { gender: e.target.value })}
+                            onChange={(e) =>
+                              updateTraveler(realIndex, {
+                                gender: e.target.value,
+                              })
+                            }
                           >
                             <option value="">Select</option>
                             <option value="male">Male</option>
@@ -1377,9 +1687,18 @@ useEffect(() => {
                         <label>
                           Age <span className="page-error">*</span>
                           <input
-                            className={`input ${attempted["COMP_DETAILS"] && !(Number(t.age) >= 18) ? "tp-error" : ""}`}
+                            className={`input ${
+                              attempted["COMP_DETAILS"] &&
+                              !(Number(t.age) >= 18)
+                                ? "tp-error"
+                                : ""
+                            }`}
                             value={t.age || ""}
-                            onChange={(e) => updateTraveler(realIndex, { age: onlyDigits(e.target.value) })}
+                            onChange={(e) =>
+                              updateTraveler(realIndex, {
+                                age: onlyDigits(e.target.value),
+                              })
+                            }
                             placeholder=""
                           />
                         </label>
@@ -1387,9 +1706,18 @@ useEffect(() => {
                         <label>
                           Email <span className="page-error">*</span>
                           <input
-                            className={`input ${attempted["COMP_DETAILS"] && !isValidEmail(t.email) ? "tp-error" : ""}`}
+                            className={`input ${
+                              attempted["COMP_DETAILS"] &&
+                              !isValidEmail(t.email)
+                                ? "tp-error"
+                                : ""
+                            }`}
                             value={t.email || ""}
-                            onChange={(e) => updateTraveler(realIndex, { email: e.target.value })}
+                            onChange={(e) =>
+                              updateTraveler(realIndex, {
+                                email: e.target.value,
+                              })
+                            }
                             placeholder="name@email.com"
                           />
                         </label>
@@ -1400,16 +1728,33 @@ useEffect(() => {
                         <div className="tp-phone-row">
                           <DataListInput
                             value={t.dialCode || ""}
-                            onChange={(e) => updateTraveler(realIndex, { dialCode: e.target.value })}
+                            onChange={(e) =>
+                              updateTraveler(realIndex, {
+                                dialCode: e.target.value,
+                              })
+                            }
                             onBlur={() => {}}
                             listId="tpDialCodesList"
                             placeholder="+20"
-                            className={attempted["COMP_DETAILS"] && !requiredText(t.dialCode) ? "tp-error" : ""}
+                            className={
+                              attempted["COMP_DETAILS"] &&
+                              !requiredText(t.dialCode)
+                                ? "tp-error"
+                                : ""
+                            }
                           />
                           <input
-                            className={`input ${attempted["COMP_DETAILS"] && !tPhoneOk ? "tp-error" : ""}`}
+                            className={`input ${
+                              attempted["COMP_DETAILS"] && !tPhoneOk
+                                ? "tp-error"
+                                : ""
+                            }`}
                             value={t.phoneLocal || ""}
-                            onChange={(e) => updateTraveler(realIndex, { phoneLocal: onlyDigits(e.target.value) })}
+                            onChange={(e) =>
+                              updateTraveler(realIndex, {
+                                phoneLocal: onlyDigits(e.target.value),
+                              })
+                            }
                             placeholder="Number"
                           />
                         </div>
@@ -1419,9 +1764,15 @@ useEffect(() => {
                         <input
                           type="checkbox"
                           checked={t.phoneHasWhatsapp !== false}
-                          onChange={(e) => updateTraveler(realIndex, { phoneHasWhatsapp: e.target.checked })}
+                          onChange={(e) =>
+                            updateTraveler(realIndex, {
+                              phoneHasWhatsapp: e.target.checked,
+                            })
+                          }
                         />
-                        <p className="page-info">This phone number has WhatsApp</p>
+                        <p className="page-info">
+                          This phone number has WhatsApp
+                        </p>
                       </div>
 
                       {t.phoneHasWhatsapp === false && (
@@ -1430,16 +1781,33 @@ useEffect(() => {
                           <div className="tp-phone-row">
                             <DataListInput
                               value={t.whatsappDialCode || ""}
-                              onChange={(e) => updateTraveler(realIndex, { whatsappDialCode: e.target.value })}
+                              onChange={(e) =>
+                                updateTraveler(realIndex, {
+                                  whatsappDialCode: e.target.value,
+                                })
+                              }
                               onBlur={() => {}}
                               listId="tpDialCodesList"
                               placeholder="+20"
-                              className={attempted["COMP_DETAILS"] && !requiredText(t.whatsappDialCode) ? "tp-error" : ""}
+                              className={
+                                attempted["COMP_DETAILS"] &&
+                                !requiredText(t.whatsappDialCode)
+                                  ? "tp-error"
+                                  : ""
+                              }
                             />
                             <input
-                              className={`input ${attempted["COMP_DETAILS"] && !tWhatsappOk ? "tp-error" : ""}`}
+                              className={`input ${
+                                attempted["COMP_DETAILS"] && !tWhatsappOk
+                                  ? "tp-error"
+                                  : ""
+                              }`}
                               value={t.whatsappLocal || ""}
-                              onChange={(e) => updateTraveler(realIndex, { whatsappLocal: onlyDigits(e.target.value) })}
+                              onChange={(e) =>
+                                updateTraveler(realIndex, {
+                                  whatsappLocal: onlyDigits(e.target.value),
+                                })
+                              }
                               placeholder="WhatsApp number"
                             />
                           </div>
@@ -1451,11 +1819,20 @@ useEffect(() => {
                           Nationality <span className="page-error">*</span>
                           <DataListInput
                             value={t.nationality || ""}
-                            onChange={(e) => updateTraveler(realIndex, { nationality: e.target.value })}
+                            onChange={(e) =>
+                              updateTraveler(realIndex, {
+                                nationality: e.target.value,
+                              })
+                            }
                             onBlur={() => {}}
                             listId="tpNationalityList"
                             placeholder="Type to search..."
-                            className={attempted["COMP_DETAILS"] && !requiredText(t.nationality) ? "tp-error" : ""}
+                            className={
+                              attempted["COMP_DETAILS"] &&
+                              !requiredText(t.nationality)
+                                ? "tp-error"
+                                : ""
+                            }
                           />
                         </label>
 
@@ -1463,11 +1840,20 @@ useEffect(() => {
                           Resident country <span className="page-error">*</span>
                           <DataListInput
                             value={t.residentCountry || ""}
-                            onChange={(e) => updateTraveler(realIndex, { residentCountry: e.target.value })}
+                            onChange={(e) =>
+                              updateTraveler(realIndex, {
+                                residentCountry: e.target.value,
+                              })
+                            }
                             onBlur={() => {}}
                             listId="tpCountryList"
                             placeholder="Type to search..."
-                            className={attempted["COMP_DETAILS"] && !requiredText(t.residentCountry) ? "tp-error" : ""}
+                            className={
+                              attempted["COMP_DETAILS"] &&
+                              !requiredText(t.residentCountry)
+                                ? "tp-error"
+                                : ""
+                            }
                           />
                         </label>
                       </div>
@@ -1477,35 +1863,63 @@ useEffect(() => {
                           National ID <span className="page-error">*</span>
                           <MaskedTextInput
                             value={t.nationalId || ""}
-                            onValueChange={(v) => updateTraveler(realIndex, { nationalId: onlyDigits(v) })}
+                            onValueChange={(v) =>
+                              updateTraveler(realIndex, {
+                                nationalId: onlyDigits(v),
+                              })
+                            }
                             placeholder="National ID"
                             inputMode="numeric"
                             maxLength={14}
-                            className={attempted["COMP_DETAILS"] && !tIdOk ? "tp-error" : ""}
+                            className={
+                              attempted["COMP_DETAILS"] && !tIdOk
+                                ? "tp-error"
+                                : ""
+                            }
                           />
                         </label>
                       ) : (
                         <>
                           <label>
-                            Passport number <span className="page-error">*</span>
+                            Passport number{" "}
+                            <span className="page-error">*</span>
                             <MaskedTextInput
                               value={t.passportNumber || ""}
-                              onValueChange={(v) => updateTraveler(realIndex, { passportNumber: sanitizePassport(v) })}
+                              onValueChange={(v) =>
+                                updateTraveler(realIndex, {
+                                  passportNumber: sanitizePassport(v),
+                                })
+                              }
                               placeholder="Passport number"
                               maxLength={20}
-                              className={attempted["COMP_DETAILS"] && !tIdOk ? "tp-error" : ""}
+                              className={
+                                attempted["COMP_DETAILS"] && !tIdOk
+                                  ? "tp-error"
+                                  : ""
+                              }
                             />
                           </label>
 
                           <label>
-                            Egypt entry status <span className="page-error">*</span>
+                            Egypt entry status{" "}
+                            <span className="page-error">*</span>
                             <select
-                              className={`input ${attempted["COMP_DETAILS"] && !tEntryOk ? "tp-error" : ""}`}
+                              className={`input ${
+                                attempted["COMP_DETAILS"] && !tEntryOk
+                                  ? "tp-error"
+                                  : ""
+                              }`}
                               value={t.entryStatusForEgypt || ""}
-                              onChange={(e) => updateTraveler(realIndex, { entryStatusForEgypt: e.target.value })}
+                              onChange={(e) =>
+                                updateTraveler(realIndex, {
+                                  entryStatusForEgypt: e.target.value,
+                                })
+                              }
                             >
                               <option value="">Select</option>
-                              <option value="RESIDENCE">Residence permit</option>
+                              <option value="RESIDENCE">
+                                Residence permit
+                              </option>
                               <option value="TOURIST">Tourist visa</option>
                             </select>
                           </label>
@@ -1523,16 +1937,27 @@ useEffect(() => {
                     const cIdOk = onlyDigits(c.birthCertId).length >= 5;
 
                     return (
-                      <div key={idx} className="tp-card" style={{ marginTop: idx ? "0.9rem" : 0 }}>
+                      <div
+                        key={idx}
+                        className="tp-card"
+                        style={{ marginTop: idx ? "0.9rem" : 0 }}
+                      >
                         <div className="tp-card-title">Child {idx + 1}</div>
 
                         <div className="field-row">
                           <label>
                             Child name <span className="page-error">*</span>
                             <input
-                              className={`input ${attempted["COMP_DETAILS"] && !requiredText(c.fullName) ? "tp-error" : ""}`}
+                              className={`input ${
+                                attempted["COMP_DETAILS"] &&
+                                !requiredText(c.fullName)
+                                  ? "tp-error"
+                                  : ""
+                              }`}
                               value={c.fullName}
-                              onChange={(e) => updateChild(idx, { fullName: e.target.value })}
+                              onChange={(e) =>
+                                updateChild(idx, { fullName: e.target.value })
+                              }
                               placeholder=""
                             />
                           </label>
@@ -1540,9 +1965,16 @@ useEffect(() => {
                           <label>
                             Age group <span className="page-error">*</span>
                             <select
-                              className={`input ${attempted["COMP_DETAILS"] && !requiredText(c.ageGroup) ? "tp-error" : ""}`}
+                              className={`input ${
+                                attempted["COMP_DETAILS"] &&
+                                !requiredText(c.ageGroup)
+                                  ? "tp-error"
+                                  : ""
+                              }`}
                               value={c.ageGroup}
-                              onChange={(e) => updateChild(idx, { ageGroup: e.target.value })}
+                              onChange={(e) =>
+                                updateChild(idx, { ageGroup: e.target.value })
+                              }
                             >
                               <option value="">Select</option>
                               <option value="lte6">≤ 6</option>
@@ -1553,14 +1985,21 @@ useEffect(() => {
                         </div>
 
                         <label>
-                          Birth certificate ID <span className="page-error">*</span>
+                          Birth certificate ID{" "}
+                          <span className="page-error">*</span>
                           <MaskedTextInput
                             value={c.birthCertId}
-                            onValueChange={(v) => updateChild(idx, { birthCertId: onlyDigits(v) })}
+                            onValueChange={(v) =>
+                              updateChild(idx, { birthCertId: onlyDigits(v) })
+                            }
                             placeholder="Birth certificate ID"
                             inputMode="numeric"
                             maxLength={20}
-                            className={attempted["COMP_DETAILS"] && !cIdOk ? "tp-error" : ""}
+                            className={
+                              attempted["COMP_DETAILS"] && !cIdOk
+                                ? "tp-error"
+                                : ""
+                            }
                           />
                         </label>
                       </div>
@@ -1656,7 +2095,9 @@ useEffect(() => {
       {stepKey === "AFTER_SUBMIT" && (
         <AfterSubmitBlock
           tripCode={form.tripCode}
-          onWhatsApp={() => window.open(buildWhatsAppLink(), "_blank", "noreferrer")}
+          onWhatsApp={() =>
+            window.open(buildWhatsAppLink(), "_blank", "noreferrer")
+          }
           onHome={() => navigate("/", { replace: true })}
         />
       )}
@@ -1685,7 +2126,9 @@ function ReviewBlock({
   const children = Math.max(0, Number(form.children) || 0);
 
   const leaderIsEgyptian = isEgyptian(form.nationality);
-  const idLeaderRaw = leaderIsEgyptian ? onlyDigits(form.nationalId) : sanitizePassport(form.passportNumber);
+  const idLeaderRaw = leaderIsEgyptian
+    ? onlyDigits(form.nationalId)
+    : sanitizePassport(form.passportNumber);
 
   return (
     <section className="form">
@@ -1747,7 +2190,9 @@ function ReviewBlock({
               {!leaderIsEgyptian && (
                 <div className="tp-kv">
                   <div className="tp-k">Egypt entry status</div>
-                  <div className="tp-v">{residenceLabel(form.entryStatusForEgypt)}</div>
+                  <div className="tp-v">
+                    {residenceLabel(form.entryStatusForEgypt)}
+                  </div>
                 </div>
               )}
 
@@ -1764,7 +2209,8 @@ function ReviewBlock({
             <div className="tp-card-title">Confirmations</div>
 
             <p className="page-info" style={{ marginTop: "0.4rem" }}>
-              Are there couples in this trip? <span className="page-error">*</span>
+              Are there couples in this trip?{" "}
+              <span className="page-error">*</span>
             </p>
 
             <div className="tp-radio">
@@ -1803,7 +2249,8 @@ function ReviewBlock({
                   onChange={(e) => update("docsAcknowledged", e.target.checked)}
                 />
                 <p className="page-info">
-                  I will send the required documents on WhatsApp after submitting. <span className="page-error">*</span>
+                  I will send the required documents on WhatsApp after
+                  submitting. <span className="page-error">*</span>
                 </p>
               </div>
             )}
@@ -1815,7 +2262,8 @@ function ReviewBlock({
                 onChange={(e) => update("termsAccepted", e.target.checked)}
               />
               <p className="page-info">
-                I agree to the Terms & Privacy Policy. <span className="page-error">*</span>
+                I agree to the Terms & Privacy Policy.{" "}
+                <span className="page-error">*</span>
               </p>
             </div>
 
@@ -1885,18 +2333,22 @@ function AfterSubmitBlock({ tripCode, onWhatsApp, onHome }) {
             <div className="tp-card-title">Next</div>
 
             <div className="tp-actions-row">
-              <button className="btn-primary" type="button" onClick={onWhatsApp}>
+              <button
+                className="btn-primary"
+                type="button"
+                onClick={onWhatsApp}
+              >
                 Send on WhatsApp (priority)
               </button>
 
               <button className="btn-ghost" type="button" onClick={onHome}>
                 Skip WhatsApp (reply may take longer)
               </button>
-              
-              <p className="tp-help" style={{ marginTop: "0.7rem" }}>
-                WhatsApp requests are handled faster — skipping may delay the reply.
-              </p>
 
+              <p className="tp-help" style={{ marginTop: "0.7rem" }}>
+                WhatsApp requests are handled faster — skipping may delay the
+                reply.
+              </p>
             </div>
 
             <p className="tp-help" style={{ marginTop: "0.7rem" }}>

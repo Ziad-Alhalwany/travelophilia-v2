@@ -1,0 +1,30 @@
+/* trip_requests/static/trip_requests/admin.css */
+
+/* خلي الجدول يسكرول أفقي بدل ما يلف */
+#changelist {
+  overflow-x: auto;
+}
+
+/* كل الخلايا سطر واحد */
+#result_list th,
+#result_list td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* خلي الأعمدة تبقى على قد المحتوى */
+#result_list {
+  table-layout: auto;
+}
+
+/* كود الحجز monospace عشان يبقى مقروء */
+td.field-trip_code,
+td.field-trip_public_code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0.2px;
+}
+
+/* تحسين بسيط للشكل */
+#result_list tr:hover td {
+  filter: brightness(1.07);
+}

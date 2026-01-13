@@ -4,6 +4,8 @@ node_modules
 # builds
 dist
 .vercel
+dist/
+.vite/
 
 # env files
 .env
@@ -22,6 +24,10 @@ pnpm-debug.log*
 **/*.pyc
 **/.pytest_cache/
 **/*.log
+__pycache__/
+*.pyo
+*.pyd
+*.sqlite3
 
 # Django local db + local data
 backend/data/
@@ -32,4 +38,19 @@ backend/django_api/staticfiles/
 # Django env
 backend/django_api/.env
 backend/django_api/.env.*
+backend/django_api/static/
 
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Django
+staticfiles/
+media/
+*.egg-info/
+.env
+.env.*
+venv/
+.venv/

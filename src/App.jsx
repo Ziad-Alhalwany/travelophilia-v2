@@ -8,6 +8,7 @@ import HomePage from "./pages/HomePage";
 import ChooseYourTripPage from "./pages/ChooseYourTripPage";
 import CustomizeYourTripPage from "./pages/CustomizeYourTripPage";
 import DestinationPage from "./pages/DestinationPage";
+import TripDetailsPage from "./pages/TripDetailsPage";
 import TripReservationPage from "./pages/TripReservationPage";
 import AfterSubmitPage from "./pages/AfterSubmitPage";
 
@@ -20,7 +21,6 @@ function RequireCRMAuth() {
   return <Outlet />;
 }
 
-// ✅ لو حصل logout (أو refresh فشل) يوديك للوجين فورًا
 function CRMAuthEvents() {
   const navigate = useNavigate();
 
@@ -47,11 +47,25 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
 
           <Route path="/choose-your-trip" element={<ChooseYourTripPage />} />
-          <Route path="/trips" element={<Navigate to="/choose-your-trip" replace />} />
+          <Route
+            path="/trips"
+            element={<Navigate to="/choose-your-trip" replace />}
+          />
 
-          <Route path="/customize-your-trip" element={<CustomizeYourTripPage />} />
+          {/* ✅ Trip Details */}
+          <Route path="/trips/:slug" element={<TripDetailsPage />} />
+
+          <Route
+            path="/customize-your-trip"
+            element={<CustomizeYourTripPage />}
+          />
           <Route path="/destinations/:slug" element={<DestinationPage />} />
-          <Route path="/reserve/:slug" element={<TripReservationPage />} />
+
+          {/* ✅ Reservation */}
+          <Route
+            path="/reserve/:identifier"
+            element={<TripReservationPage />}
+          />
           <Route path="/after-submit" element={<AfterSubmitPage />} />
 
           {/* CRM */}
@@ -60,7 +74,6 @@ export default function App() {
             <Route path="/crm" element={<CRMLeadsPage />} />
           </Route>
 
-          {/* fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -73,7 +86,8 @@ export default function App() {
               <span className="footer-logo-text">Travelophilia</span>
             </div>
             <p className="footer-text">
-              Trips crafted by humans, powered by smart tools — starting from Egypt and expanding beyond.
+              Trips crafted by humans, powered by smart tools — starting from
+              Egypt and expanding beyond.
             </p>
           </div>
 
@@ -104,7 +118,9 @@ export default function App() {
         </div>
 
         <div className="footer-bottom">
-          <p className="footer-bottom-text">© {new Date().getFullYear()} Travelophilia. All rights reserved.</p>
+          <p className="footer-bottom-text">
+            © {new Date().getFullYear()} Travelophilia. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>

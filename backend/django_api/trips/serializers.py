@@ -1,19 +1,11 @@
+# backend/django_api/trips/serializers.py
 from rest_framework import serializers
-from .models import Trip
+from .models import Trip, Destination, Activity
 
 
 class TripSerializer(serializers.ModelSerializer):
     # ✅ frontend بيقرأ title — نخليه alias من name
     title = serializers.CharField(source="name", read_only=True)
-
-    # ✅ نخلي "slug" اللي بيروح للفرونت = public_code (ده اللي الفرونت بينادي بيه)
-    slug = serializers.CharField(source="public_code", read_only=True)
-
-    # ✅ نحتفظ بالـ slug القديم داخلي/للتتبع
-    legacySlug = serializers.CharField(source="slug", read_only=True)
-
-    publicCode = serializers.CharField(source="public_code", read_only=True)
-    globalSeq = serializers.IntegerField(source="global_seq", read_only=True)
 
     # ✅ حقول تساعد الكروت
     destinationCity = serializers.SerializerMethodField()
@@ -43,23 +35,19 @@ class TripSerializer(serializers.ModelSerializer):
         model = Trip
         fields = [
             "id",
-
-            # ✅ frontend identifier
-            "slug",        # = public_code
-            "publicCode",
-            "globalSeq",
-
-            # internal tracking
-            "legacySlug",
-
+            # ✅ Identifiers (clean)
+            "slug",  # SEO slug
+            "public_code",  # Operational code (موجود في الموديل)
+            "global_seq",  # موجود في الموديل
             # display
             "name",
             "title",
             "location",
             "type",
             "description",
-
-            # pricing/meta
+            "media",
+            "social_proof",
+            # pricing/meta (كما هو حاليًا)
             "priceFrom",
             "priceTo",
             "currency",
@@ -71,13 +59,55 @@ class TripSerializer(serializers.ModelSerializer):
             "startDate",
             "availableDate",
             "is_active",
-
-            # codes (مفيدة للـ admin/dashboard)
+            # codes
             "dest_code",
             "from_code",
             "to_code",
-
-            # internal (company only)
+            # internal
             "internal_key",
             "internal_seq",
+        ]
+
+
+class DestinationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Destination
+        fields = [
+            "id",
+            "code",
+            "slug",
+            "name",
+            "country",
+            "city",
+            "description",
+            "cover_image_url",
+            "gallery_urls",
+            "video_urls",
+            "is_active",
+            "sort_order",
+        ]
+
+
+class ActivitySerializer(serializers.ModelSerializer):
+    duration = serializers.CharField(source="duration_label", read_only=True)
+
+    destinationCode = serializers.CharField(source="destination.code", read_only=True)
+    destinationSlug = serializers.CharField(source="destination.slug", read_only=True)
+
+    class Meta:
+        model = Activity
+        fields = [
+            "id",
+            "title",
+            "slug",
+            "description",
+            "price",
+            "currency",
+            "duration",
+            "options",
+            "tags",
+            "is_active",
+            "sort_order",
+            "destinationCode",
+            "destinationSlug",
         ]

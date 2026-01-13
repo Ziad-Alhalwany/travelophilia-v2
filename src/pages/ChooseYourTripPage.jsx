@@ -160,9 +160,9 @@ export default function ChooseYourTripPage() {
     if (filters.sort === "DATE_ASC") {
       list.sort((a, b) => (tripWhen(a) || "9999-99-99").localeCompare(tripWhen(b) || "9999-99-99"));
     } else if (filters.sort === "PRICE_ASC") {
-      list.sort((a, b) => (Number(a?.priceFrom || 0) - Number(b?.priceFrom || 0)));
+      list.sort((a, b) => Number(a?.priceFrom || 0) - Number(b?.priceFrom || 0));
     } else if (filters.sort === "PRICE_DESC") {
-      list.sort((a, b) => (Number(b?.priceFrom || 0) - Number(a?.priceFrom || 0)));
+      list.sort((a, b) => Number(b?.priceFrom || 0) - Number(a?.priceFrom || 0));
     }
 
     return list;
@@ -172,9 +172,7 @@ export default function ChooseYourTripPage() {
     <div className="page trips-page">
       <section className="page-header">
         <h1 className="page-title">Choose your trip</h1>
-        <p className="page-subtitle">
-          Trips from DB — filter, sort, then reserve.
-        </p>
+        <p className="page-subtitle">Trips from DB — filter, sort, then open details.</p>
       </section>
 
       {/* Tabs */}
@@ -196,9 +194,7 @@ export default function ChooseYourTripPage() {
       </div>
 
       {/* Loading / Error */}
-      {loading ? (
-        <p className="page-info" style={{ marginTop: "1rem" }}>Loading trips…</p>
-      ) : null}
+      {loading ? <p className="page-info" style={{ marginTop: "1rem" }}>Loading trips…</p> : null}
 
       {err ? (
         <p className="page-info" style={{ marginTop: "1rem", color: "salmon" }}>
@@ -233,7 +229,9 @@ export default function ChooseYourTripPage() {
             >
               <option value="">Any date</option>
               {dateOptions.map((d) => (
-                <option key={d} value={d}>{d}</option>
+                <option key={d} value={d}>
+                  {d}
+                </option>
               ))}
             </select>
           </div>
@@ -280,25 +278,28 @@ export default function ChooseYourTripPage() {
             const when = tripWhen(t);
             const dur = String(t?.durationLabel || "").trim();
             const dest = String(t?.destinationCity || "").trim();
+
             const dayuseTo = dayuse ? codeToCityName(t?.to_code) : "";
             const origin = dayuse ? codeToCityName(t?.from_code) : "";
+
             const originLabel = origin ? origin : "";
-            const destLabel = dayuse ? (dayuseTo || dest || "") : (dest || "");
+            const destLabel = dayuse ? (dayuseTo || dest || "") : dest || "";
+
             const desc = String(t?.description || "").trim();
 
-            // ✅ Important: slug اللي هنستخدمه في /reserve لازم يكون public_code
-            // serializer عندك بيرجع slug = public_code, وكمان publicCode
+            // ✅ slug اللي هنستخدمه في التفاصيل = public_code (serializer بيرجع slug = public_code)
             const publicSlug = String(t?.slug || t?.publicCode || "").trim();
 
             // Query params: من الفلاتر أو من data
             const depart = (filters.date || departQS || when || "").trim();
-            const nightsVal = tab === TAB_STAY && filters.nights !== "ALL"
-              ? Number(filters.nights)
-              : (Number(nightsQS) || tripNights(t) || 0);
+            const nightsVal =
+              tab === TAB_STAY && filters.nights !== "ALL" ? Number(filters.nights) : Number(nightsQS) || tripNights(t) || 0;
 
-            const ret = dayuse
-              ? (returnQS || depart)
-              : (returnQS || (depart && nightsVal ? addDaysISO(depart, nightsVal) : ""));
+            const ret = dayuse ? (returnQS || depart) : returnQS || (depart && nightsVal ? addDaysISO(depart, nightsVal) : "");
+
+            const qp = `depart=${encodeURIComponent(depart)}&return=${encodeURIComponent(ret)}&nights=${encodeURIComponent(
+              String(nightsVal || "")
+            )}`;
 
             return (
               <article key={publicSlug || t?.id} className="trip-card">
@@ -313,9 +314,7 @@ export default function ChooseYourTripPage() {
                     : `${destLabel || "—"}${dur ? ` • ${dur}` : ""}${when ? ` • ${when}` : ""}`}
                 </div>
 
-                <div className="trip-card-description">
-                  {desc || "—"}
-                </div>
+                <div className="trip-card-description">{desc || "—"}</div>
 
                 <div className="trip-card-meta">
                   <span className="trip-card-price">
@@ -325,17 +324,22 @@ export default function ChooseYourTripPage() {
 
                 <div className="trip-card-tags">
                   {(t?.tags || []).slice(0, 4).map((tag) => (
-                    <span className="trip-tag" key={String(tag)}>{String(tag)}</span>
+                    <span className="trip-tag" key={String(tag)}>
+                      {String(tag)}
+                    </span>
                   ))}
                 </div>
 
                 <div className="trip-card-btn">
-                  <Link
-                    className="btn-primary"
-                    to={`/reserve/${encodeURIComponent(publicSlug)}?depart=${encodeURIComponent(depart)}&return=${encodeURIComponent(ret)}&nights=${encodeURIComponent(String(nightsVal || ""))}`}
-                  >
-                    Reserve / Request booking
-                  </Link>
+                  {publicSlug ? (
+                    <Link className="btn-primary" to={`/trips/${encodeURIComponent(publicSlug)}?${qp}`}>
+                      View details
+                    </Link>
+                  ) : (
+                    <button className="btn-primary" type="button" disabled>
+                      Coming soon
+                    </button>
+                  )}
                 </div>
               </article>
             );
