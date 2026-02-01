@@ -54,3 +54,8 @@ media/
 .env.*
 venv/
 .venv/
+
+# Local-only / private / noisy folders
+docs/agents/
+tools/
+settings.json
