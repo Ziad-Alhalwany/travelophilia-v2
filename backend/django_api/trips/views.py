@@ -11,8 +11,7 @@ from .serializers import TripSerializer, DestinationSerializer, ActivitySerializ
 
 def normalize_code_or_slug(s: str) -> str:
     s = (s or "").strip()
-    s = re.sub(r"-\d{4}-\d{2}-\d{2}$", "", s)  # strip date suffix (legacy)
-    return s.strip()
+    return s
 
 
 def find_destination(identifier: str):
