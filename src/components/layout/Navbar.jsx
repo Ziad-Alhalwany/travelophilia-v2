@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-20 backdrop-blur-md bg-gradient-to-r from-[#060a0f]/98 to-[#061218]/96 border-b border-white/5">
+    <header className="sticky top-0 z-20 backdrop-blur-lg bg-background/80 border-b border-border/50">
       <div className="max-w-[1120px] mx-auto px-4 py-3 flex items-center gap-6 flex-wrap sm:flex-nowrap">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 text-text-main shrink-0">
@@ -39,7 +39,7 @@ export function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-2.5 ml-auto">
-          <Button variant="outline" asChild className="rounded-full border-white/15 bg-[#061218]/90 text-text-main text-xs px-3 py-1.5 h-auto hover:border-accent-strong/80 hover:bg-[#0a1e26]/95 hover:-translate-y-[1px] transition-all">
+          <Button variant="outline" asChild className="rounded-full border-border/60 bg-background/60 text-foreground text-xs px-3 py-1.5 h-auto hover:border-primary/60 hover:bg-background/80 hover:-translate-y-[1px] transition-all">
             <Link to="/login" className="inline-flex items-center gap-1.5">
               <User size={14} />
               <span className="hidden sm:inline">Sign In</span>

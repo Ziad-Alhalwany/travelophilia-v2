@@ -19,8 +19,8 @@ export default function Home() {
   useEffect(() => {
     const fetchTrips = async () => {
       try {
-        const response = await apiClient.getTrips();
-        const tripsData = Array.isArray(response.data) ? response.data : response.data.results || [];
+        const data = await apiClient.getTrips();
+        const tripsData = Array.isArray(data) ? data : data?.results || [];
         setTrips(tripsData);
       } catch (err) {
         setError("Failed to load destinations. Please try again later.");
@@ -42,7 +42,7 @@ export default function Home() {
             <span className="inline-block text-xs tracking-[0.16em] uppercase text-accent-strong mb-3 font-medium">
               Curated Experiences
             </span>
-            <h1 className="text-4xl sm:text-[2.6rem] leading-[1.1] mb-5 font-bold tracking-tight">
+            <h1 className="text-4xl sm:text-[2.6rem] leading-[1.1] mb-5 font-bold tracking-tight bg-gradient-to-r from-foreground via-primary to-[#00d8c0] bg-clip-text text-transparent">
               Discover the World's Best Kept Secrets.
             </h1>
             <p className="text-text-muted mb-8 text-base sm:text-lg leading-relaxed max-w-[90%]">

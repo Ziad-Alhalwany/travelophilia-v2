@@ -31,7 +31,7 @@ export function TripCard({
 }) {
   return (
     <Link to={`/destinations/${slug}`} className="group block">
-      <Card className="flex flex-col h-full rounded-2xl bg-[radial-gradient(circle_at_top_left,#182532_0,#090f14_60%)] border-white/10 overflow-hidden hover:-translate-y-1 hover:border-accent-strong/60 hover:shadow-[0_16px_40px_rgba(0,0,0,0.6)] transition-all duration-300">
+      <Card className="flex flex-col h-full rounded-2xl bg-card border-border overflow-hidden hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/40 hover:shadow-[0_16px_40px_rgba(0,0,0,0.5)] transition-all duration-300">
         {/* Image / Placeholder */}
         <div className="h-[200px] w-full bg-card relative overflow-hidden group-hover:after:opacity-0 after:absolute after:inset-0 after:bg-black/20 after:transition-opacity">
           {coverImage ? (
