@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowRight, AlertTriangle } from "lucide-react";
 import apiClient from "@/services/apiClient";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +37,7 @@ export default function Home() {
     <div className="pt-2 sm:pt-6">
       {/* Hero Section */}
       <section className="mb-16 sm:mb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           <div className="max-w-[560px]">
             <span className="inline-block text-xs tracking-[0.16em] uppercase text-accent-strong mb-3 font-medium">
               Curated Experiences
@@ -48,18 +49,18 @@ export default function Home() {
               We design premium, hand-crafted journeys for the modern explorer. Experience authentic cultures without compromising on luxury.
             </p>
             <div className="flex flex-wrap gap-4 mb-8">
-              <Button size="lg" className="rounded-full bg-gradient-to-br from-primary to-[#00d8c0] text-primary-foreground font-bold border-none shadow-[0_14px_32px_hsl(var(--primary)/0.4)] hover:-translate-y-[1px] hover:shadow-[0_16px_36px_hsl(var(--primary)/0.55)] transition-all">
-                Explore Destinations
+              <Button asChild size="lg" className="rounded-full bg-gradient-to-br from-primary to-[#00d8c0] text-primary-foreground font-bold border-none shadow-[0_14px_32px_hsl(var(--primary)/0.4)] hover:-translate-y-[1px] hover:shadow-[0_16px_36px_hsl(var(--primary)/0.55)] transition-all">
+                <Link to="/choose-your-trip">Explore Destinations</Link>
               </Button>
-              <Button size="lg" variant="outline" className="rounded-full border-white/15 bg-transparent text-foreground hover:bg-white/5 hover:border-white/30 transition-all">
-                View Travel Styles
+              <Button asChild size="lg" variant="outline" className="rounded-full border-white/15 bg-transparent text-foreground hover:bg-white/5 hover:border-white/30 transition-all">
+                <Link to="/customize-your-trip">Customize Your Trip</Link>
               </Button>
             </div>
             
-            <div className="flex flex-wrap gap-3">
-               <span className="px-3 py-1.5 rounded-full bg-secondary border border-border text-xs text-muted-foreground">High-End Stays</span>
-               <span className="px-3 py-1.5 rounded-full bg-secondary border border-border text-xs text-muted-foreground">Local Experts</span>
-               <span className="px-3 py-1.5 rounded-full bg-secondary border border-border text-xs text-muted-foreground">Small Groups</span>
+            <div className="flex flex-wrap gap-2.5">
+               <Button variant="outline" size="sm" className="rounded-full border-border bg-secondary/60 text-muted-foreground text-xs cursor-default hover:bg-secondary/80 h-auto py-1.5 px-3">High-End Stays</Button>
+               <Button variant="outline" size="sm" className="rounded-full border-border bg-secondary/60 text-muted-foreground text-xs cursor-default hover:bg-secondary/80 h-auto py-1.5 px-3">Local Experts</Button>
+               <Button variant="outline" size="sm" className="rounded-full border-border bg-secondary/60 text-muted-foreground text-xs cursor-default hover:bg-secondary/80 h-auto py-1.5 px-3">Small Groups</Button>
             </div>
           </div>
           
@@ -99,8 +100,12 @@ export default function Home() {
             ))}
           </div>
         ) : error ? (
-          <div className="p-6 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-center">
-            {error}
+          <div role="alert" className="flex items-start gap-4 p-5 rounded-2xl bg-destructive/5 border border-destructive/20 text-sm">
+            <AlertTriangle size={20} className="text-destructive shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-destructive mb-1">Unable to load destinations</h4>
+              <p className="text-muted-foreground text-xs leading-relaxed">{error}</p>
+            </div>
           </div>
         ) : trips.length === 0 ? (
           <div className="p-10 rounded-2xl bg-secondary border border-border text-center text-muted-foreground">

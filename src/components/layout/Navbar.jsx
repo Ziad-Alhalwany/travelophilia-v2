@@ -16,16 +16,22 @@ export function Navbar() {
         </Link>
 
         {/* Links */}
-        <nav className="flex items-center gap-4 ml-0 sm:ml-6 text-sm flex-1 order-3 sm:order-none w-full sm:w-auto mt-2 sm:mt-0">
+        <nav className="flex items-center gap-5 ml-0 sm:ml-6 text-sm flex-1 order-3 sm:order-none w-full sm:w-auto mt-2 sm:mt-0">
           <Link
-            to="/"
-            className="relative text-accent-strong py-1 after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full after:bg-accent-strong after:rounded-full after:transition-all hover:text-text-main"
+            to="/choose-your-trip"
+            className="relative text-text-muted py-1 after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-accent-strong after:rounded-full after:transition-all hover:text-accent-strong hover:after:w-full"
           >
             Destinations
           </Link>
           <Link
+            to="/customize-your-trip"
+            className="relative text-text-muted py-1 after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-accent-strong after:rounded-full after:transition-all hover:text-accent-strong hover:after:w-full"
+          >
+            Customize Trip
+          </Link>
+          <Link
             to="/about"
-            className="relative text-text-muted py-1 after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-accent-strong after:rounded-full after:transition-all hover:text-text-main hover:after:w-full"
+            className="relative text-text-muted py-1 after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-accent-strong after:rounded-full after:transition-all hover:text-accent-strong hover:after:w-full"
           >
             About
           </Link>
