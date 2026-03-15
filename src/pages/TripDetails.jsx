@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
-import { MapPin, Calendar, Users, CheckCircle, ArrowLeft, Star } from "lucide-react";
-import apiClient, { getTripBySlug } from "@/services/apiClient";
-import { TripRequestForm } from "@/components/forms/TripRequestForm";
+import { Calendar, Users, CheckCircle, ArrowLeft } from "lucide-react";
+import { getTripBySlug } from "@/services/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
