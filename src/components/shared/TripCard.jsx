@@ -30,10 +30,10 @@ export function TripCard({
   coverImage,
 }) {
   return (
-    <Link to={`/destinations/${slug}`} className="group block">
-      <Card className="flex flex-col h-full rounded-2xl bg-card border-border overflow-hidden hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/40 hover:shadow-[0_16px_40px_rgba(0,0,0,0.5)] transition-all duration-300">
+    <Link to={`/destinations/${slug}`} className="group block h-full">
+      <Card className="bg-card text-card-foreground border-border overflow-hidden flex flex-col h-full rounded-2xl hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/40 hover:shadow-[0_16px_40px_rgba(0,0,0,0.5)] transition-all duration-300">
         {/* Image / Placeholder */}
-        <div className="h-[200px] w-full bg-card relative overflow-hidden group-hover:after:opacity-0 after:absolute after:inset-0 after:bg-black/20 after:transition-opacity">
+        <div className="aspect-video w-full bg-secondary relative overflow-hidden group-hover:after:opacity-0 after:absolute after:inset-0 after:bg-black/20 after:transition-opacity">
           {coverImage ? (
             <img
               src={coverImage}
@@ -52,7 +52,7 @@ export function TripCard({
         </div>
 
         <CardContent className="p-5 flex flex-col flex-1">
-          <h3 className="text-lg font-bold mb-2 leading-tight group-hover:text-accent-strong transition-colors">
+          <h3 className="text-lg font-bold mb-2 leading-tight group-hover:text-primary transition-colors">
             {title}
           </h3>
           <p className="text-muted-foreground text-xs line-clamp-2 mb-4 leading-relaxed flex-1">

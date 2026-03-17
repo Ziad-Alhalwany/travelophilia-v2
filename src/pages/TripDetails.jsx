@@ -298,7 +298,7 @@ export default function TripDetails() {
   /* ═══ CheckoutCard sub-component ═══ */
   function CheckoutCard({ compact = false }) {
     return (
-      <Card className={`border-border bg-secondary/50 backdrop-blur-sm ${compact ? "" : "lg:sticky lg:top-24"}`}>
+      <Card className={`bg-card text-card-foreground border border-border rounded-2xl ${compact ? "" : "lg:sticky lg:top-24"}`}>
         <CardContent className="p-6">
           {/* Header */}
           <div className="flex justify-between items-start mb-6">
@@ -351,7 +351,7 @@ export default function TripDetails() {
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
                   placeholder="مثال: TP10"
-                  className="bg-background border-border rounded-lg h-9 text-xs"
+                  className="bg-background text-foreground border-border rounded-lg h-9 text-xs"
                 />
                 {appliedCoupon ? (
                   <Button variant="ghost" size="sm" onClick={removeCoupon} className="text-xs shrink-0">Remove</Button>
@@ -433,43 +433,41 @@ export default function TripDetails() {
             </p>
           </div>
 
-          {/* Stats grid */}
-          <Card className="rounded-2xl bg-secondary border-border mb-10">
-            <CardContent className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {/* Stats bar */}
+          <div className="bg-secondary text-secondary-foreground p-6 rounded-2xl flex flex-wrap justify-between items-center mt-8 mb-10 gap-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Duration</span>
+              <div className="flex items-center gap-1.5 font-medium">
+                <Calendar size={15} className="text-primary" />
+                <span>{trip.durationDays || trip.durationLabel || "—"}</span>
+              </div>
+            </div>
+
+            {(trip.maxCapacity || trip.max_capacity) && (
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Duration</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Group Size</span>
                 <div className="flex items-center gap-1.5 font-medium">
-                  <Calendar size={15} className="text-primary" />
-                  <span>{trip.durationDays || trip.durationLabel || "—"}</span>
+                  <Users size={15} className="text-primary" />
+                  <span>Max {trip.maxCapacity || trip.max_capacity}</span>
                 </div>
               </div>
+            )}
 
-              {(trip.maxCapacity || trip.max_capacity) && (
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Group Size</span>
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <Users size={15} className="text-primary" />
-                    <span>Max {trip.maxCapacity || trip.max_capacity}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Status</span>
-                <div className="flex items-center gap-1.5 font-medium text-foreground/90">
-                  <span className={`w-2 h-2 rounded-full ${trip.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                  <span className="capitalize">{trip.status || 'Active'}</span>
-                </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Status</span>
+              <div className="flex items-center gap-1.5 font-medium text-foreground/90">
+                <span className={`w-2 h-2 rounded-full ${trip.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                <span className="capitalize">{trip.status || 'Active'}</span>
               </div>
+            </div>
 
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Base Price</span>
-                <div className="flex items-center gap-1.5 font-medium text-primary text-lg">
-                  {money(basePriceEGP)}
-                </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Base Price</span>
+              <div className="flex items-center gap-1.5 font-medium text-primary text-lg">
+                {money(basePriceEGP)}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Media Gallery */}
           {(images.length > 0 || videos.length > 0) && (
