@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-20 backdrop-blur-lg bg-background/80 border-b border-border/50">
-      <div className="max-w-[1120px] mx-auto px-4 py-3 flex items-center gap-6 flex-wrap sm:flex-nowrap">
+    <header className="fixed top-0 w-full z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-6 flex-wrap sm:flex-nowrap">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 text-text-main shrink-0">
           <span className="text-2xl">🌍</span>
