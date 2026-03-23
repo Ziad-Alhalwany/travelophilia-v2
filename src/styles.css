@@ -1,24 +1,61 @@
-/* ====== Global base ====== */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ══════ Shadcn tokens synced with Travelophilia Brand ══════ */
+
+    /* Backgrounds — Dark Premium Theme */
+    --background: 206 42% 6%;       /* #0b141a  ← brand --bg-main */
+    --foreground: 210 20% 92%;      /* #e8ecf0  ← brand --text-main */
+
+    --card: 205 37% 10%;            /* #101b23  ← brand --bg-card */
+    --card-foreground: 210 20% 92%;
+
+    --popover: 205 37% 10%;
+    --popover-foreground: 210 20% 92%;
+
+    /* Primary = Brand accent #00d8c0 */
+    --primary: 172 100% 42%;        /* #00d8c0  ← brand --accent-strong */
+    --primary-foreground: 200 30% 5%;  /* dark text on teal bg */
+
+    --secondary: 206 38% 11%;       /* #121f28 */
+    --secondary-foreground: 210 20% 92%;
+
+    --muted: 210 10% 25%;           /* #363d44  subtle muted bg */
+    --muted-foreground: 212 16% 59%; /* #8896a4  ← brand --text-muted */
+
+    --accent: 172 100% 42%;         /* same as primary */
+    --accent-foreground: 200 30% 5%;
+
+    --destructive: 351 100% 71%;    /* #ff6b81 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 15% 18%;          /* #262e36  ← brand --border-subtle */
+    --input: 210 15% 15%;           /* slightly darker for inputs */
+    --ring: 172 100% 42%;
+
+    --radius: 0.5rem;
+
+    /* ══════ Legacy Brand Variables (used by 1000+ legacy classes) ══════ */
+    --bg-main: #0b141a;
+    --bg-card: #101b23;
+    --text-main: #e8ecf0;
+    --text-muted: #8896a4;
+    --accent-strong: #00d8c0;
+    --border-subtle: #262e36;
+    --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.6);
+  }
 }
 
-:root {
-  --bg-main: #0b141a;
-  --bg-card: #101b23;
-  --bg-soft: #121f28;
-  --accent: #1abc9c;
-  --accent-soft: rgba(26, 188, 156, 0.16);
-  --accent-strong: #00d8c0;
-  --text-main: #f5f7fa;
-  --text-muted: #9ba6b2;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --error: #ff6b81;
-  --radius-lg: 18px;
-  --radius-xl: 22px;
-  --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.6);
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 html,
