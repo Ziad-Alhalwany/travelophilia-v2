@@ -1,51 +1,67 @@
 ## Agent Operating Policy (One-time)
 
-## Branch Policy (Source of Truth)
+### Branch Policy
 
-- Daily working base branch: `owner/integration`
-- Stable release branch: `main`
+- **Daily working base branch (Source of Truth أثناء الشغل):** `owner/integration`
+- **Stable release branch:** `main`
+- كل Agents لازم تعمل sync من `owner/integration` إلا لو اتقال غير كده صراحة.
+- فقط الـ Owner يعمل merge من `owner/integration` → `main` لما تبقى الأمور جاهزة.
 
-Agents must sync from `owner/integration` unless explicitly instructed otherwise.
-Only the owner merges `owner/integration` → `main` when ready.
+### Worktree Rule (IMPORTANT)
 
-**How to check latest**
+Git worktrees تمنع تثبيت نفس الفرع في مكانين في نفس الوقت.
 
-- افتح: `docs/agents/_index.md` لمعرفة أحدث Run لكل Agent.
-- اعتمد على “Contracts” وليس Runs للتنفيذ:
-  - Backend Contract: في `docs/api.md` (قسم Backend Contract)
-  - Identifiers: `docs/identifiers.md`
-  - Locks: `docs/locks.md`
-  - Tasks: `docs/tasks.md`
+- أي تعديل/commit/push على `owner/integration` يتم من مجلد المشروع الرئيسي:
+  `D:\ZIAD Alhalwany\TRAVILOPHILIA\TRAVELOPHILIA WEBSITE\Travelophilia v2`
+- أي شغل خاص بـ `agent/<name>` يتم من worktree الخاص به:
+  `D:\ZIAD Alhalwany\TRAVILOPHILIA\TRAVELOPHILIA WEBSITE\_worktrees\<name>`
 
-**Runs vs Contracts**
+### What to Read (Tracked in Git)
 
-- Runs = تقارير تفصيلية (مرجع/سجل).
-- Contracts = قرارات تنفيذية مختصرة (Source of Truth للتنفيذ).
-- ممنوع التنفيذ مباشرة من Run بدون تحديث الـ Contract لو فيه قرار جديد.
+- **Agents Index:** `docs/agents-index.md` (آخر وضع سريع + قرارات + القادم)
+- **Tasks:** `docs/tasks.md`
+- **Backend/Frontend Contract:** `docs/api.md`
+- **Identifiers:** `docs/identifiers.md`
+- **Locks:** `docs/locks.md`
+- **Product Context:** `docs/product/PROJECT_CONTEXT.md`
 
-**Change discipline**
+### Runs vs Contracts
 
-- أي تغيير قرار (slug rules / endpoints / codes) لازم يتسجل في الـ Contract + tasks item.
-- ممنوع Refactor واسع أثناء Bugfix صغير.
+- **Runs (Reports):** تقارير تفصيلية (مرجع/سجل) — مكانها Local فقط في `_shared`.
+- **Contracts:** قرارات تنفيذية مختصرة (Source of Truth للتنفيذ) — لازم تكون داخل `docs/*` ومرفوعة على `owner/integration`.
+- ممنوع التنفيذ مباشرة من Report بدون تحديث الـ Contract لو فيه قرار جديد.
 
-## Policy: Local-only Logs (STRICT)
+### Local-only Logs (STRICT)
 
-- ممنوع إنشاء أو استخدام أي مسار داخل الريبو باسم:
-  `docs/agents/**`
-  لأنه ignored وبيتعرض للحذف عند التنضيف (`git clean`) ومش بيتشارك عبر Git.
+❌ ممنوع تمامًا إنشاء أو استخدام أي Logs/Reports داخل repo في:
 
-- أي Logs / Chats / Reports خاصة بالـ Agents تكون **محليًا فقط** في:
-  `_shared/agents/<agent>/{chats,reports}/_runs/`
+- `docs/agents/**`
 
-- أي “قرارات/ملخصات” يجب أن تُكتب في ملفات متتبعة داخل Git:
-  - `docs/agents-index.md` (ملخص الحالة العامة + آخر القرارات + القادم)
-  - و/أو `docs/tasks.md` (لو مهام)
-  - و/أو `docs/api.md` / `docs/product/*` حسب نوع القرار
+✅ مكان التقارير والشاتات الوحيد (Local ثابت على جهاز الـ Owner):
 
-## 5) Handoff to Next Agent (MANDATORY)
+- `D:\ZIAD Alhalwany\TRAVILOPHILIA\TRAVELOPHILIA WEBSITE\_shared\agents\<agent>\{reports,chats}\_runs\`
 
-- What I completed:
-- What changed (contracts/decisions/files):
-- Next step for you:
-- Risks/Blockers:
-- References (paths + commit hashes):
+✅ أي “قرارات/ملخصات” يجب كتابتها في ملفات متتبعة داخل Git:
+
+- `docs/agents-index.md` و/أو `docs/tasks.md` و/أو `docs/api.md` و/أو `docs/product/*`
+
+### TP-STATE-SYNC-001 (MANDATORY)
+
+كل Agent يسلّم تقرير State Sync في:
+`_shared/agents/<agent>/reports/_runs/TP-STATE-SYNC-001.md`
+
+**Header إلزامي داخل التقرير:**
+
+- Branch: `agent/<name>`
+- Last synced base commit: `<hash>` (من `owner/integration`)
+- git status: `clean/dirty`
+
+وفي آخر التقرير لازم:
+
+## Handoff to Next Agent (MANDATORY)
+
+- What I completed
+- What changed (contracts/decisions/files)
+- Next step for you
+- Risks/Blockers
+- References (paths + commit hashes)

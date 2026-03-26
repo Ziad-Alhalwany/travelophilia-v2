@@ -1,21 +1,25 @@
-# Security Policy
+# 🛡️ Travelophilia Security Policy
 
-## Supported Versions
+نحن نتعامل مع بيانات حساسة للعملاء (هويات شخصية، باسبورات). هذا المستند يمثل القواعد الأمنية الصارمة للمشروع:
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+## 1. تخزين الوثائق (Document Storage)
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+- **ممنوع** تخزين أي صور (بطاقات/جواز سفر) على السيرفر المحلي.
+- **إجباري** استخدام Private Buckets (مثل AWS S3).
+- الصور لا تفتح برابط مباشر (Public URL)، بل بـ Signed URL تنتهي صلاحيته خلال دقائق، ولا يُولد إلا لمدير يمتلك الصلاحيات.
 
-## Reporting a Vulnerability
+## 2. تشفير البيانات (Data Masking)
 
-Use this section to tell people how to report a vulnerability.
+- أرقام الهويات وجوازات السفر تُشفر في قاعدة البيانات (PostgreSQL).
+- في الواجهة الأمامية (Frontend)، يتم عمل Masking للرقم ليظهر هكذا: `**** **** 1234`.
+- إظهار الرقم الكامل يتطلب ضغط زر (Eye Icon) والذي يستدعي API محمي يتأكد من صلاحية الموظف.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+## 3. المصادقة والصلاحيات (Auth & 2FA)
+
+- أي حساب بصلاحيات (Staff, Admin, Partner) **يجب** أن يفعل المصادقة الثنائية (OTP عبر الإيميل أو الواتساب).
+- الصلاحيات (RBAC) تُطبق على مستوى الـ Backend (DRF Permissions)، ولا نعتمد أبداً على إخفاء الأزرار في الفرونت إند فقط.
+
+## 4. منع تسريب البيانات
+
+- يُمنع طباعة أي (Tokens, Passwords, API Keys) في الـ Console Logs.
+- الاعتماد الكامل على ملف `.env`، ولا يتم رفعه أبداً إلى GitHub (مضاف في `.gitignore`).
