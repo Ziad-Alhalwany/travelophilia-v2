@@ -1,12 +1,14 @@
-# مواصفات مشروع موقع Travelophilia
+# مواصفات مشروع موقع Travelophilia (Master PRD)
 
-فيما يلي تجميع شامل لكل الطلبات والميزات والمتطلبات الخاصة بمشروع موقع **Travelophilia**، منظم في هيكل واضح يسهل الرجوع إليه.
+**Version:** 2.0 | **Architecture:** React + Django + PostgreSQL
+
+فيما يلي التجميع الشامل والمُحدَّث لكل الطلبات، الميزات، والمتطلبات الخاصة بمشروع **Travelophilia** (نظام التشغيل والتجربة السياحية)
 
 ---
 
-## 1. البنية الكاملة للمشروع (Project Structure)
+## 0. البنية الكاملة للمشروع (Project Structure)
 
-- **Root / travelophilia-web (Travelophilia v2)**  
+- **Root / travelophilia-web (Travelophilia v2)**
   - `public/`: صور، فيديوهات، شعارات، ملفات ثابتة.
   - `src/`:
     - `assets/`: أيقونات، خطوط، عناصر تصميم.
@@ -24,7 +26,7 @@
     - `routes/`: نقاط نهاية API لكل وظائف الموقع.
     - `models/`: مخططات البيانات (Users، Hotels، Bookings، Transportation، Feedback...).
     - `middleware/`: الحماية، التوثيق الثنائي، إدارة الجلسات، مكافحة VPN.
-    - `utils/`: JWT، OTP، توليد تقارير PDF، رفع ملفات، أدوات المزامنة مع Airtable/Zoho.
+    - `utils/`: JWT، OTP، توليد تقارير PDF، رفع ملفات، أدوات المزامنة مع.
     - `server.js`: نقطة تشغيل الخادم.
   - `ai-agents/`:
     - `assistant-core.js`: إعداد وكيل الذكاء الاصطناعي لخدمة العملاء.
@@ -40,7 +42,7 @@
   - `data-seed/`: بيانات أولية للفنادق، الرحلات، الأنشطة، المزودين.
   - `docs/`: توثيق (requirements، API docs، diagrams).
   - `README.md`: توثيق شامل للتشغيل والبناء.
-  - `.env`: مفاتيح حساسة (Zoho، Airtable، مزوّدي الدفع، البريد...).
+  - `.env`: مفاتيح حساسة (- مزوّدي الدفع، البريد...).
   - `package.json`: حزم المشروع (React، Node، Integrations، أدوات الأمن).
 
 - **قابلية التوسع**: دعم تطبيق Android/iOS لاحقًا بنفس الـ APIs.
@@ -48,412 +50,141 @@
 
 ---
 
-## 2. الواجهة الأمامية (Frontend)
+## 1. البنية التقنية والمعمارية (Tech Stack & Structure)
+
+- **الواجهة الأمامية (Frontend):** - React.js + Vite (بـ `camelCase`).
+  - Tailwind CSS v4 + Shadcn UI (للتصميم والمكونات الجاهزة).
+  - PWA (Progressive Web App) ليعمل الموقع (Offline) وتصفح الحجوزات بدون إنترنت.
+- **الخوادم (Backend):** - Django + Django REST Framework (DRF) (بـ `snake_case`).
+  - PostgreSQL (قاعدة البيانات الأساسية والوحيدة للـ CRM والـ Trips).
+- **التخزين الآمن (Storage & Security):**
+  - AWS S3 (Private Buckets) لرفع المستندات الحساسة.
+  - تشفير أرقام الهويات (Masking).
+- **الاستضافة (Hosting):** Vercel للفرونت إند + Render/VPS للباك إند.
+- **التكاملات الخارجية (Integrations):**
+  - **Zoho Mail:** للبريد الرسمي فقط (وليس كقاعدة بيانات).
+  - **WhatsApp Business API:** لإرسال التأكيدات واسترجاع العملاء.
+  - **Google Maps API:** لتتبع مسارات النقل والرحلات.
+  - **ElevenLabs:** لتوليد الصوتيات.
+  - **بوابات الدفع:** Paymob, Stripe, Instapay.
+
+---
+
+## 2. الواجهة الأمامية وتجربة العميل (Frontend & UX)
 
 ### 2.1 الصفحة الرئيسية (Home Page)
 
-- **دعم اللغات واللهجات**:
-  - تحديد اللغة تلقائيًا بناءً على بلد المستخدم أو IP (مع دعم لغات ولهجات متعددة).
-  - إمكانية تغيير اللغة يدويًا من واجهة المستخدم.
-  - محاولة كشف التحايل عن طريق VPN قدر الإمكان.
+- **دعم اللغات والعملات الذكي (Geo-Location):**
+  - تحديد اللغة والعملة تلقائياً بناءً على الـ IP مع نظام حماية ضد تلاعب الـ VPN.
+  - أسعار مخصصة لكل جنسية/منطقة.
+- **الـ Hero / Header:**
+  - Slogan: "للذين يريدون الحياة..." / "Wanderlust has a name, it's Travelophilia".
+  - قوائم تنقل: `Home | About Us | Support Team | Work With Us | Collaborate | Destinations ...`.
+  - حقل بحث شامل (خدمات، وجهات، أنشطة).
+- **عرض الأقسام (Dynamic Sections):**
+  - ترتيب الإظهار: Trips ← Hotels ← Camps ← Hostels ← Chalets/Apartments ← Activities ← Transportation ← Flights ← Visas.
+  - العرض يكون عشوائياً من مدن مختلفة لإبراز الانتشار الجغرافي.
+- **الدليل الاجتماعي (Scarcity & Social Proof) [ميزة جديدة]:**
+  - إظهار علامات ديناميكية مثل "3 أشخاص يتصفحون هذه الرحلة الآن" أو "متبقي مكانين فقط".
+- **Feedback & Rating:**
+  - خانة تقييم عامة في الرئيسية (تعرض بعد موافقة الإدارة).
 
-- **دعم العملات**:
-  - تحديد العملة تلقائيًا حسب الموقع الجغرافي للمستخدم.
-  - أسعار مخصصة لكل جنسية (سعوديين، مصريين، أجانب...).
-  - تقليل فرص التحايل عبر VPN.
+### 2.2 صفحات الوجهات والفئات (Destinations & Segments)
 
-- **Hero / Header**:
-  - عرض تقديمي للموقع وخدماته.
-  - قوائم تنقل رئيسية:
-    - `Home | About Us | Support Team | Work With Us | Collaborate With Us | Be One Of Us | Be an Ambassador | Ticket Flight | Choose Your Trip | Customize Your Trip | Transportation | Activities | Prepare Your Visa and Others | Destinations`
-  - أزرار تسجيل الدخول وإنشاء حساب.
-  - حقل بحث شامل (خدمات، وجهات، أنشطة…).
+- **موسوعة الوجهات (Destinations Wiki):**
+  - صفحة لكل مدينة تحتوي على: التاريخ، الجغرافيا، المطاعم، وسائل النقل المحلي (مترو/حافلات مع خرائط تفاعلية)، وأفضل الأنشطة.
+- **الفئات (Segments):** - صفحات مخصصة لـ (Solo Traveler, Family Traveler, Couples, Groups).
 
-- **أيقونات السوشيال ميديا**:
-  - Facebook، Instagram، TikTok، LinkedIn، Snapchat، X، YouTube، Threads، Telegram، WhatsApp.
+### 2.3 نظام الحجز الذكي (Smart Booking Wizard) - 💎 Core Feature
 
-- **عروض الصفحة الرئيسية**:
-  - عرض الرحلات Packages المروَّجة.
-  - عرض فنادق عشوائية من مدن مختلفة.
-  - عرض معسكرات (Camps) عشوائيًا.
-  - عرض Hostels، شاليهات، شقق، أنشطة (Activities)، خدمات النقل، تذاكر الطيران، خدمات التأشيرات.
-  - ترتيب منطقي: Trips → Hotels → Camps → Hostels → Chalets/Apartments → Activities → Transportation → Flights → Visas.
-  - كل قسم له صفحة مخصصة عند الضغط على العنوان (عرض + فلترة).
+- **النماذج (DAY USE & ACCOMMODATION):**
+  - Progress Bar تفاعلي.
+  - أسئلة ذكية: إذا كان أجنبياً يُطلب (باسبور + تأشيرة الدخول)، وإذا كان مصرياً يُطلب (بطاقة قومية).
+  - أسئلة الأطفال: إظهار خانات الأعمار (<6, 6-11, >11) لتطبيق سياسات التسعير.
+  - إظهار تنبيه بإرسال "قسيمة الزواج" أو "شهادات الميلاد" على الواتساب إذا تم تحديد وجود أزواج أو أطفال.
+- **رابط المرافقين السحري (Magic Companion Link) [ميزة جديدة]:**
+  - الليدر يملأ بياناته ويختار إرسال رابط لأصدقائه لملء بياناتهم بأنفسهم.
+  - يتم توليد Landing Page مؤقتة بكود الرحلة وتُرسل للمرافقين.
+- **الدفع المقسم (Split Payment) [ميزة جديدة]:**
+  - يمكن لكل مرافق دفع الجزء الخاص به من التكلفة عبر الرابط السحري.
+- **البيع المتقاطع (Smart Upsells) [ميزة جديدة]:**
+  - عرض إضافات (Upgrade) قبل إتمام الدفع (مثال: ترقية لغرفة Sea View، سفاري) وحسابها لحظياً.
+- **التوجيه الفوري (Checkout to WhatsApp):**
+  - حفظ الطلب كـ Pending، وتوجيه العميل لـ Deep Link واتساب برسالة جاهزة (كود الطلب + ملخص سريع).
 
-- **Feedback & Rating**:
-  - خانة تقييم وتعليق عام على الشركة في الصفحة الرئيسية.
-  - تقييمات وتعليقات لكل مزود خدمة تظهر في صفحته الخاصة.
-  - شرط عرض التقييم:
-    - إما المستخدم اشترى خدمة بالفعل.
-    - أو تعليق عام بعد مراجعته من الإدارة.
+### 2.4 الخدمات الإضافية وصفحات الموقع
 
-### 2.2 Landing Page
-
-- صفحة مخصصة للعروض الموسمية والحملات الإعلانية.
-- تسهل ربط الإعلانات (Meta / TikTok / Google) بصفحة هبوط واضحة.
-
-### 2.3 صفحات الفئات (Segments)
-
-- صفحات/أقسام لفئات مختلفة:
-  - Solo Traveler
-  - Family Traveler
-  - Couples
-  - Groups
-- كل واحدة لها محتوى وعروض وخدمات تناسبها.
-
-### 2.4 Customize Your Trip
-
-- نموذجين رئيسيين:
-  1. **DAY USE TRIP**
-  2. **ACCOMMODATION TRIP**
-- حقول أساسية:
-  - الاسم، السن، رقم الهاتف، الجنسية، البريد (اختياري)، نوع الرحلة، التواريخ، عدد المسافرين، ملاحظات.
-- لاحقًا:
-  - حقول متقدمة (الوظيفة، الديانة، رقم البطاقة/جواز السفر، نوع الغرفة، الميزانية).
-  - رفع مستندات (هوية، جواز سفر، إقامة…).
-- البيانات تُرسل إلى:
-  - Backend (Database)
-  - Airtable / Zoho عبر Webhooks/Integrations.
-
-### 2.5 Choose Your Trip
-
-- استعراض الباقات الجاهزة.
-- فلترة حسب:
-  - التاريخ، الميزانية، عدد المسافرين، نوع الرحلة، الوجهة.
-
-### 2.6 Ticket Flight
-
-- صفحة لعرض ودعم حجز تذاكر الطيران:
-  - نموذج طلب تذكرة.
-  - فلترة حسب الوجهة، التاريخ، الميزانية.
-  - ربط مع Backend لإدارة الطلب.
-
-### 2.7 Transportation
-
-- عرض خدمات النقل:
-  - Private Cars، Shuttles، Nile Cruise، City-to-City، إلخ.
-- تجربة قريبة من Booking / Uber / Indrive:
-  - عرض السيارة، السائق، عدد الركاب، الخدمات، المدن التي يغطيها.
-- دمج Google Maps (في مرحلة متقدمة):
-  - عرض نقطة الانطلاق والوصول.
-  - routes محتملة.
-
-### 2.8 Activities
-
-- عرض الأنشطة الترفيهية:
-  - سفاري، غطس، رحلات بحرية، جولات ثقافية…
-- فلترة حسب:
-  - الوجهة، نوع النشاط، السعر، المدة.
-- تقييمات وصور وفيديوهات.
-
-### 2.9 Prepare Your Visa and Others
-
-- معلومات عن:
-  - إجراءات التأشيرة لكل جنسية.
-  - المستندات المطلوبة، خطوات التقديم، المدة، الأسعار.
-- إمكانية إضافة:
-  - خدمات تأمين سفر، استشارات، تجهيز أوراق.
-
-### 2.10 About Us
-
-- أقسام:
-  - Our Story
-  - Our Vision
-  - Our Target
-- Timeline:
-  - مراحل تطور الشركة على مستوى الشهور/السنين.
-- صور وفيديوهات:
-  - من الرحلات، الأحداث، التوسعات.
-
-### 2.11 Support Team
-
-- معلومات التواصل:
-  - Email، WhatsApp، نموذج دعم.
-- نظام تذاكر (Ticketing):
-  - لكل طلب دعم رقم وتاريخ وحالة.
-
-### 2.12 Work With Us
-
-- أقسام رئيسية:
-  - Add Your Property:
-    - فنادق، كامبات، شاليهات، هوستلز، شقق.
-    - نموذج + رفع مستندات وصور + مراجعة من الإدارة.
-  - Add Your Transportation:
-    - سيارات، سائقين، مستندات، نطاق العمل.
-  - Be Guide With Us:
-    - مرشدين سياحيين: بيانات شخصية، خبرات، مناطق تغطية.
-
-### 2.13 Collaborate With Us
-
-- موجه إلى:
-  - مطاعم، كافيهات، براندات، معدات سفر، متاجر.
-- نموذج تعاون:
-  - بيانات النشاط، العروض، طرق التواصل.
-- Influencers & Content Creators:
-  - بيانات شخصية، روابط حسابات، إحصائيات، مناطق التغطية.
-
-### 2.14 Be One of Us
-
-- بوابة وظائف:
-  - نموذج تقديم (مجال، خبرة، CV).
-  - إدارة داخلية للطلبات (قبول/رفض/قيد المراجعة).
-
-### 2.15 Be an Ambassador
-
-- برنامج سفراء:
-  - للمسافرين المتكررين، المرشدين، أصحاب التأثير.
-  - مزايا وحوافز (رحلات، خصومات، نقاط).
-
-### 2.16 Destinations
-
-- صفحة لكل دولة/مدينة تحتوي على:
-  - نظرة عامة، تاريخ، سبب التسمية.
-  - جغرافيا وتقسيمات (أحياء، مناطق).
-  - أفضل أوقات الزيارة.
-  - مدة الإقامة المثالية.
-  - المطاعم المشهورة، أفضل مقدمي الخدمات.
-  - وسائل النقل المحلية (مترو، حافلات، تاكسي…).
-  - الأنشطة المميزة.
-  - محتوى مخصص للمصريين والأجانب.
+- **Customize Your Plan (الخدمة المدفوعة):** مسار للعميل الذي يطلب تخطيط رحلة مخصصة برسوم استشارة تُضاف للـ Cart.
+- **Ticket Flight / Transportation / Activities / Visas:** صفحات مخصصة لكل خدمة بـ Advanced Filters (تاريخ، ميزانية، وجهة).
+- **Work With Us & Collaborate:** - فورم موحدة ذكية تتغير حقولها حسب نوع الشريك (الفندق يرفع ورق ملكية، المرشد السياحي يرفع فيديو تعريفي وإقرار شروط).
+- **Be One of Us / Ambassador:** بوابات للتوظيف وبرامج السفراء والـ Influencers.
 
 ---
 
-## 3. نظام الحجز والدفع (Booking & Payment Flow)
+## 3. العمليات ولوحات التحكم الداخلية (Operations, CRM & B2B)
 
-1. **اختيار الخدمة**:
-   - المستخدم يضيف الخدمات (Trip، Hotel، Activity، Transport، Ticket) إلى سلة الحجز.
+### 3.1 لوحات تحكم الموظفين (Staff CRM Dashboards)
 
-2. **ملخص قبل الدفع (Basket Summary)**:
-   - عرض العناصر، الأسعار، العملة، عدد الأفراد، التواريخ.
+- **CRM Leads:** شاشة تعرض طلبات الحجز (Trip Requests)، حالتها، والـ Lead Code.
+- **الحجز اليدوي:** فورم للموظفين لإدخال حجوزات العملاء القادمين من (السوشيال ميديا أو الواتساب) وربطها بنفس قاعدة البيانات.
+- **الفصل الإداري:** لوحات منفصلة (Admin, Financial, Operations, Support) مع فصل الصلاحيات.
 
-3. **إدخال بيانات المسافرين**:
-   - اسم، عمر، جنسية، مستندات (لو مطلوبة).
+### 3.2 بوابات الشركاء (Vendors Portals)
 
-4. **اختيار وسيلة الدفع**:
-   - Paymob، Stripe، PayPal، Instapay (مع إمكانية إضافة Apple Pay / Google Pay مستقبلًا).
+- إعطاء حسابات (Username/Password) للمناديب والفنادق لمتابعة الحجوزات الخاصة بهم فقط (Data Isolation).
 
-5. **تأكيد الطلب (Order Confirmation)**:
-   - صفحة + Email + WhatsApp (تدريجيًا حسب التكاملات).
+### 3.3 الأتمتة واسترجاع العملاء (Automations)
 
-6. **التقارير**:
-   - توليد تقرير PDF أو مستند تفصيلي لكل حجز.
-   - نسخة للعميل + نسخة داخلية.
+- **Abandoned Cart [ميزة جديدة]:** إرسال رسالة واتساب آلية لمن لم يكمل نموذج الحجز بعد فترة محددة.
+- **قوائم الانتظار (Waitlists) [ميزة جديدة]:** زر "أعلمني عند توفر أماكن" للرحلات المكتملة.
+- **التقارير الآلية:** توليد تقرير PDF (Voucher) تلقائياً عند دفع 50% أو 100% وإرساله للعميل عبر الواتساب والإيميل.
 
 ---
 
-## 4. التكاملات (Integrations)
+## 4. قواعد البيانات وأمان النظام (Backend, DB & Security)
 
-- **Airtable**:
-  - استقبال بيانات النماذج (Trips، Partners، Feedback).
-- **Zoho (CRM + Books/Inventory + Mail)**:
-  - إدارة العملاء، الفواتير، الحسابات.
-  - البريد الرسمي (support@، partners@، careers@…).
-- **WhatsApp Business API**:
-  - إرسال تأكيدات، تذكيرات، روابط حجز.
-- **Google Maps API**:
-  - عرض خرائط، مواقع، routes.
-- **Payment Gateways**:
-  - Stripe، Paymob، PayPal، Instapay، (Apple Pay / Google Pay مستقبلًا).
-- **ElevenLabs**:
-  - توليد صوتيات للمحتوى التسويقي / فيديوهات.
+### 4.1 نماذج وقواعد البيانات (Trip Requests & Models)
 
----
+- الـ Backend (Django) هو مصدر الحقيقة الوحيد (Source of Truth).
+- الـ Endpoint `POST /api/trip-requests/` تتوقع البيانات بـ `snake_case`.
+- **الـ Validation الإلزامي في الباك إند:**
+  - `origin_city`, `destination_city`, `pax_total`, `depart_date`.
+  - للمصريين: إلزامي وجود آخر 4 أرقام من البطاقة القومية.
+  - للأجانب: إلزامي وجود آخر 4 أرقام من الباسبور + نوع الإقامة.
+  - تأكيد قراءة شروط الوثائق (docs_acknowledged) إلزامي لو يوجد أزواج/أطفال.
 
-## 5. الأمان (Security & Compliance)
+### 4.2 نظام الأكواد والمعرفات (Smart Identifiers)
 
-- **2FA**:
-  - للمستخدمين والإداريين حسب الحساسية.
-- **RBAC (Roles & Permissions)**:
-  - أدوار: Owner, Admin, Finance, Support, Content, Tech, Providers, Ambassadors, Influencers.
-- **تشفير بيانات**:
-  - بيانات حساسة + مستندات + طرق الدفع.
-- **التزام بالخصوصية**:
-  - معايير مثل GDPR (إن لزم الأمر) والقوانين المحلية.
-- **حماية المحتوى**:
-  - مراجعة التقييمات والتعليقات قبل نشرها.
-  - نظام لمنع السبام.
+- **Trip Public Code:** كود الرحلة التشغيلي الثابت (مثال: `ST-0000007-SIWA`).
+- **Slug:** الرابط التسويقي للـ SEO (مثال: `siwa-weekend`).
+- **Customer Code:** كود يجمع الرحلة والمسافر (مثال: `ST-0000007-SIWA-R0003-P01`).
+
+### 4.3 الأمان والخصوصية (Security Constraints)
+
+- **المصادقة الثنائية (2FA/OTP):** إلزامية لأي حساب يمتلك صلاحيات (Staff/Partner).
+- **تشفير الوثائق:** يمنع تخزين صور البطاقات/الباسبورات على السيرفر، تُرفع مباشرة إلى Private AWS S3 Bucket ولا تُفتح إلا بـ Signed URL للموظف المختص.
+- **تشفير الأرقام (UI Masking):** أرقام الهويات تظهر للعميل والموظفين العاديين مشفرة (`**** 1234`)، وتظهر كاملة لمديرين محددين فقط.
+- ممنوع تواجد أي أسرار (Secrets, API Keys) في كود المستودع.
 
 ---
 
-## 6. التحليلات ولوحات التحكم (Analytics & Dashboards)
+## 5. الولاء، المجتمع، والمستقبل (Loyalty & Community)
 
-- **Admin Dashboard**:
-  - عدد الحجوزات، الإيرادات، الزوار، التوزيع حسب الوجهة.
-- **Financial Dashboard**:
-  - أرباح، مصروفات، صافي الربح، مستحقات المزودين.
-- **Destination Report**:
-  - أداء الوجهات (عدد الزوار، تقييمات، مبيعات).
-- **Partner Dashboard**:
-  - لكل شريك لوحة تعرض حجوزاته وأدائه.
-- **User Dashboard**:
-  - عرض الحجوزات السابقة، النقاط، الأنشطة.
+- **محفظة النقاط (Points System):** مكافآت (نقاط) على الحجز، التقييمات، ودعوة الأصدقاء، أو التفاعل على السوشيال ميديا.
+- **التقييمات الموثقة (Verified Reviews):** يمنع النظام التقييم ما لم تكن حالة العميل (Confirmed/Purchased) في الداتا بيز.
+- **مجتمعات الرحلات (Private Trip Communities):** غرف دردشة (أو قنوات) تُفتح للمسافرين الذين يمتلكون "كود رحلة مؤكد" للتعارف قبل الانطلاق.
+- **الفرص التطوعية (Volunteering):** صفحة لفرص السفر المدعوم بالكامل أو جزئياً.
+- **الرؤية المستقبلية:** إضافة رحلات الحج والعمرة، الوجهات الأوروبية/الآسيوية، وتطبيقات الموبايل المعتمدة على نفس الـ API.
 
 ---
 
-## 7. نظام النقاط والمكافآت (Engagement & Rewards)
+## 6. معايير القبول والتشغيل (Acceptance Criteria & DoD)
 
-- نقاط مقابل:
-  - التفاعل على السوشيال (Likes, Comments, Shares) عبر روابط مرتبطة.
-  - مشاركة محتوى (Reels، صور، فيديوهات).
-- استبدال النقاط:
-  - خصومات، رحلات مجانية، ترقية غرف، مزايا.
-
----
-
-## 8. المحتوى و SEO
-
-- خطة SEO:
-  - كلمات مفتاحية، محتوى منظم، عناوين ووصف، Schema.
-- مدونة/محتوى:
-  - مقالات سفر، نصائح، قصص رحلات، أدلة وجهات.
-- محتوى متعدد اللغات:
-  - عربي / إنجليزي / لغات أخرى حسب التوسّع.
-
----
-
-## 9. النماذج (Forms) وأتمتة العمليات
-
-- **Customize Your Trip** (Day Use / Accommodation).
-- **Providers / Partners**:
-  - فنادق، كامبات، شاليهات، هوستلز، شقق، مزودو نشاطات.
-- **Transportation Providers**:
-  - سيارات، سائقين، مستندات، نطاق العمل.
-- **Guides**:
-  - مرشدين سياحيين.
-- **Influencers & Content Creators**:
-  - تعاون تسويقي.
-- **Jobs** (Be One of Us):
-  - تقديم على الوظائف.
-- **Ambassadors**:
-  - برنامج السفراء.
-- **Feedback & Rating**:
-  - لكل خدمة + Feedback عام عن الشركة.
-
-كل النماذج ترتبط بـ Airtable/Zoho في مراحل التطبيق الفعلي.
-
----
-
-## 10. إدارة المحتوى والمراجعات
-
-- **مراجعة الشركاء**:
-  - حالات: Pending / Approved / Rejected.
-- **مراجعة التقييمات**:
-  - عدم النشر إلا بعد الموافقة.
-- **التقارير**:
-  - إرسال تقارير للمديرين (بريد/WhatsApp).
-
----
-
-## 11. المراسلات والتواصل الرسمي
-
-- **Zoho Mail**:
-  - بريد رسمي للفرق المختلفة.
-- **WhatsApp**:
-  - قناة دعم ورسائل تأكيد.
-- لاحقًا:
-  - Slack / MS Teams للتواصل الداخلي.
-
----
-
-## 12. مستقبل المشروع
-
-- رحلات حج وعمرة.
-- تغطية وجهات عالمية (أوروبا، آسيا، أفريقيا).
-- تطبيقات موبايل (iOS / Android).
-- ذكاء اصطناعي لتوصية الرحلات وتوقّع الطلب.
-- تحسين مستمر لـ UI/UX بناءً على Feedback المستخدمين.
-
----
-
-# Travelophilia — Requirements (Product)
-
-## 1) Scope (MVP → Production)
-### MVP must support
-- Browse trips (list)
-- View trip details
-- Submit a reservation (Trip Request)
-- View requests in CRM (internal)
-- Support STAY + DAYUSE types
-
-### Out of Scope (later)
-- Online payments
-- Full booking engine for hotels/transfers
-- Automated itinerary builder
-- Advanced CRM workflows (assignments, SLA, etc.)
-
----
-
-## 2) Pages & UX (Customer)
-### Home
-- Brand promise: “Trips for humans, not tourists”
-- CTA: Start a trip / Choose your trip / Customize
-
-### Trips List (/choose-your-trip)
-- Show trip cards: title, location, type, base price, tags, rating (if exists)
-- Filter (later) by type/destination/price
-
-### Trip Details (/trips/:slug)
-- Show media (images/videos)
-- Show highlights + description
-- Show add-ons (activities) when available
-- Show checkout summary
-- CTA to reservation
-
-### Reservation (/reserve/:identifier)
-- Form validates required fields
-- Handles Egyptian vs non-Egyptian identity rules
-- Must submit successfully and create TripRequest
-- Must show success message + reference code
-
-### Customize trip (/customize)
-- Collect requirements and submit custom trip request
-- Must not break existing flows
-
----
-
-## 3) Internal (CRM)
-### CRM Leads (/crm/leads or similar)
-- Show trip requests list
-- Show status/priority labels (not numeric)
-- Show internal code + lead code (for team)
-- Requires authentication
-
----
-
-## 4) Backend Requirements
-### Trips
-- Must support lookup by slug OR public_code.
-- Must return stable fields; avoid breaking FE.
-
-### Trip Requests
-- Endpoint `POST /api/trip-requests/` expects snake_case.
-- Must validate:
-  - origin_city, destination_city, terms_accepted, depart_date, return_date, pax_total, adults_count, children_count
-  - identity rules:
-    - Egyptians: national id last4 required
-    - Non-Egyptians: passport last4 + entry_type_for_egypt required
-  - docs_acknowledged required when couples YES or children > 0
-
-### CRM
-- Protected endpoints.
-- Refresh token flow works.
-
----
-
-## 5) Non-Functional Requirements
-- Reliability: no 500s in normal flows
-- Performance: trips list loads under 2 seconds locally
-- Security: auth protected CRM endpoints, no secrets in repo
-- Maintainability: hybrid naming policy enforced
-
----
-
-## 6) Acceptance Criteria (Key Flows)
-1) Trips list loads and renders cards
-2) Trip details loads by slug
-3) Reservation page loads by public_code identifier
-4) Submitting reservation creates a TripRequest and shows success
-5) CRM shows the created request
-
+1. قائمة الرحلات (Trips List) يتم تحميلها بسرعة ولا تعتمد على بيانات صلبة (Hardcoded).
+2. واجهة تفاصيل الرحلة تعمل باستخدام الـ `Slug`.
+3. واجهة الحجز تعمل باستخدام الـ `public_code` للرحلة.
+4. إرسال طلب حجز (Reservation) يُنشئ تسجيلاً حقيقياً في جداول `TripRequest` بقاعدة البيانات، ويولّد أكواداً صحيحة للمسافرين.
+5. الطلب يظهر فوراً في لوحة تحكم الـ CRM للموظفين.
+6. لا توجد أخطاء `500 Internal Server Error` في المسارات السعيدة (Happy Paths) أو عند إدخال بيانات خاطئة (يجب إرجاع `400 Bad Request` برسائل واضحة).
 
 _هذا الملف يعمل كمرجع رسمي لمتطلبات مشروع Travelophilia، ويتم تحديثه عند أي تعديل جديد في الرؤية أو الخصائص._
