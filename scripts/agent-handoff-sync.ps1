@@ -89,7 +89,7 @@ Where-Object { $_.Name -notmatch '^_' } |
 Select-Object -ExpandProperty Name |
 Sort-Object
 
-$now = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+$now = Get-Date -Format "yyyy-MM-dd dddd HH:mm:ss"
 
 $rows = @()
 foreach ($a in $agents) {

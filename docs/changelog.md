@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- اعتماد هيكل المشروع الجديد (Master Tree Map) لـ V2.
+- تحديث التقنيات إلى Django REST + React Vite + Postgres.
+- اعتماد الـ 6 مميزات البيعية الفريدة (Magic Link, Split Payment, Smart Upsells, PWA, Waitlists, Scarcity).
+
 ### Added
 
 - (اكتب هنا أي Features جديدة)
