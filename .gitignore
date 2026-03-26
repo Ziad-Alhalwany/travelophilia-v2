@@ -56,6 +56,6 @@ venv/
 .venv/
 
 # Local-only / private / noisy folders
-docs/agents/
+.shared/
 tools/
 settings.json
