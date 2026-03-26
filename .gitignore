@@ -38,6 +38,7 @@ backend/django_api/staticfiles/
 # Django env
 backend/django_api/.env
 backend/django_api/.env.*
+!backend/django_api/.env.example
 backend/django_api/static/
 
 # OS / Editor
@@ -56,6 +57,6 @@ venv/
 .venv/
 
 # Local-only / private / noisy folders
-docs/agents/
+.shared/
 tools/
 settings.json

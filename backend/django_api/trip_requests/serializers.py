@@ -241,7 +241,17 @@ class TripRequestCreateSerializer(serializers.ModelSerializer):
         if "docs_acknowledged" not in attrs and "docsAcknowledged" in attrs:
             attrs["docs_acknowledged"] = bool(attrs.get("docsAcknowledged"))
 
-        # 2) Business rules
+        # 2) Defensive Programming for JSON fields
+        for json_field in ["travelers", "children_details"]:
+            val = attrs.get(json_field)
+            if val is not None:
+                if not isinstance(val, (list, tuple)):
+                    raise serializers.ValidationError({json_field: ["Must be a list of objects."]})
+                for item in val:
+                    if not isinstance(item, dict):
+                        raise serializers.ValidationError({json_field: ["All items in the list must be objects."]})
+
+        # 3) Business rules
         if attrs.get("terms_accepted") is not True:
             raise serializers.ValidationError(
                 {"terms_accepted": ["You must accept terms."]}
