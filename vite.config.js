@@ -1,8 +1,19 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { resolve } from 'path'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+  resolve: {
+    alias: {
+      // إعداد الـ Alias بشكل نظيف عشان Shadcn والمستقبل
+      "@": resolve(process.cwd(), "./src"),
+    },
+  },
 
   // مهم: نخلي Vite يركز في الـ entries بتاعة الفرونت بس
   optimizeDeps: {
