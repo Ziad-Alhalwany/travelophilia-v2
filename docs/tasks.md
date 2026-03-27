@@ -1,32 +1,37 @@
 <div dir="rtl">
 
-# Tasks Board — Travelophilia
+# Master Task Board — Travelophilia 🗺️
 
-> **ملاحظة**: هذا الملف هو المصدر الوحيد لحالة المهام.  
-> أي تغيير يجب أن يكون مرتبطًا بـ Commit/PR أو Handoff واضح ويذكر الـ branch + commit hash عند اللزوم.
+> **ملاحظة صارمة**: هذا الملف هو المصدر الوحيد (Source of Truth) لحالة المهام.
+>
+> - أي تغيير يجب أن يكون مرتبطًا بـ Commit/PR أو Handoff واضح.
+> - يجب ذكر الـ branch + commit hash عند نقل المهمة إلى (Done).
+> - يجب كتابة اسم الـ Agent المسؤول بجوار كل مهمة قيد العمل.
 
-## Backlog
+---
 
-- TP-001: Postgres integration (prod-ready) — BE
-- TP-002: Persist Custom Trip Requests — BE
-- TP-003: CRM pipeline statuses + UI — OpsCRM + FE
-- TP-004: Basic analytics events plan — Analytics
-- TP-005: Voucher generation v1 — Ops + BE
-- TP-006: Pricing guardrails v1 — Finance + BE
+## 🔴 Blocked (متوقف بسبب مشكلة)
 
-## In Progress
+- [ ] _لا يوجد مهام متوقفة حالياً_
 
-- TP-MERGE-001: Merge owner/integration into main
-- TP-FE-START-001: FE consume backend contract (lookup + trip request)
-- TP-OPSCRM-SYNC-001: CRM pipeline + required fields aligned with codes
-- TP-STATE-SYNC-001: All agents submit state sync report in \_shared
+## 🟡 In Progress (قيد العمل حالياً)
 
-## Blocked
+- [ ] TP-MERGE-001: Merge owner/integration into main (Assigned to: `@Release` / `Ziad`)
+- [ ] TP-FE-START-001: FE consume backend contract (lookup + trip request) (Assigned to: `@FE2`)
+- [ ] TP-OPSCRM-SYNC-001: CRM pipeline + required fields aligned with codes (Assigned to: `@OpsCRM`)
+- [ ] TP-STATE-SYNC-001: All agents submit state sync report in \_shared (Assigned to: `@All_Agents`)
 
-- لا يوجد حاليًا
+## 🔵 Backlog (مهام قادمة - مرتبة بالأولوية)
 
-## Done
+- [ ] TP-001: Postgres integration (prod-ready) (Planned for: `@BE2`)
+- [ ] TP-002: Persist Custom Trip Requests (Planned for: `@BE1`)
+- [ ] TP-003: CRM pipeline statuses + UI (Planned for: `@OpsCRM`, `@FE1`)
+- [ ] TP-004: Basic analytics events plan (Planned for: `@Analytics`)
+- [ ] TP-005: Voucher generation v1 (Planned for: `@OpsCRM`, `@BE1`)
+- [ ] TP-006: Pricing guardrails v1 (Planned for: `@Finance`, `@BE1`)
 
-- TP-BE-IMPL-001: Remove slug date-stripping + add strict lookup & concurrency tests (owner/integration: e100a77)
+## 🟢 Done (مكتمل وتم الدمج)
+
+- [x] TP-BE-IMPL-001: Remove slug date-stripping + add strict lookup & concurrency tests (owner/integration: e100a77)
 
 </div>
