@@ -29,6 +29,28 @@ class ReservationSequence(models.Model):
         return f"{self.trip_public_code} (last_r={self.last_r})"
 
 
+class Customer(models.Model):
+    full_name = models.CharField(max_length=200, blank=True, default="")
+    phone = models.CharField(max_length=32, blank=True, default="")
+    whatsapp = models.CharField(max_length=32, blank=True, default="")
+    email = models.EmailField(blank=True, default="")
+    gender = models.CharField(max_length=16, blank=True, default="")
+    age = models.PositiveIntegerField(null=True, blank=True)
+
+    nationality = models.CharField(max_length=80, blank=True, default="")
+    resident_country = models.CharField(max_length=80, blank=True, default="")
+
+    identity_type = models.CharField(max_length=16, blank=True, default="")
+    identity_last4 = models.CharField(max_length=8, blank=True, default="")
+    identity_hash = models.CharField(max_length=255, blank=True, default="", help_text="Hashed identity for data masking")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.full_name} ({self.phone})"
+
+
 class TripRequest(models.Model):
     class Status(models.TextChoices):
         NEW = "NEW", "New"
@@ -69,24 +91,10 @@ class TripRequest(models.Model):
     internal_code_override = models.CharField(max_length=96, blank=True, default="")
 
     # =========================
-    # Leader / Traveler
+    # Customer / Traveler
     # =========================
-    leader_full_name = models.CharField(max_length=200, blank=True, default="")
-    leader_phone = models.CharField(max_length=32, blank=True, default="")
-    leader_whatsapp = models.CharField(max_length=32, blank=True, default="")
-    leader_email = models.EmailField(blank=True, default="")
-    leader_gender = models.CharField(max_length=16, blank=True, default="")
-    leader_age = models.PositiveIntegerField(null=True, blank=True)
-
-    leader_nationality = models.CharField(max_length=80, blank=True, default="")
-    leader_resident_country = models.CharField(max_length=80, blank=True, default="")
-
-    leader_identity_type = models.CharField(max_length=16, blank=True, default="")
-    leader_identity_last4 = models.CharField(max_length=8, blank=True, default="")
+    customer = models.ForeignKey(Customer, null=True, blank=True, on_delete=models.SET_NULL, related_name='trip_requests')
     entry_type_for_egypt = models.CharField(max_length=16, blank=True, default="")
-
-    nationality = models.CharField(max_length=80, blank=True, default="")
-    resident_country = models.CharField(max_length=80, blank=True, default="")
 
     # =========================
     # Trip info
@@ -174,41 +182,33 @@ class TripRequest(models.Model):
             return ""
         return f"{self.traveler_code}-{self.lead_code}"
 
-    def _next_traveler_p(self) -> int:
-        last = (
-            TripRequest.objects.filter(
-                trip_public_code=self.trip_public_code, reservation_r=self.reservation_r
-            )
-            .aggregate(m=Max("traveler_p"))
-            .get("m")
-        )
-        return int(last or 0) + 1
-
     def save(self, *args, **kwargs):
         creating = self.pk is None
 
-        if creating and self.trip_public_code and not self.reservation_r:
+        if creating and self.trip_public_code and (not self.reservation_r or not self.traveler_p):
             with transaction.atomic():
                 seq, _ = ReservationSequence.objects.select_for_update().get_or_create(
                     trip_public_code=self.trip_public_code,
                     defaults={"last_r": 0},
                 )
-                seq.last_r = int(seq.last_r or 0) + 1
-                seq.save(update_fields=["last_r"])
-                self.reservation_r = seq.last_r
+                
+                if not self.reservation_r:
+                    seq.last_r = int(seq.last_r or 0) + 1
+                    seq.save(update_fields=["last_r"])
+                    self.reservation_r = seq.last_r
+                    
+                if not self.traveler_p:
+                    last = (
+                        TripRequest.objects.filter(
+                            trip_public_code=self.trip_public_code, reservation_r=self.reservation_r
+                        )
+                        .aggregate(m=Max("traveler_p"))
+                        .get("m")
+                    )
+                    self.traveler_p = int(last or 0) + 1
 
-            if not self.traveler_p:
-                self.traveler_p = 1
             if self.is_leader is None:
                 self.is_leader = True
-
-        if (
-            creating
-            and self.trip_public_code
-            and self.reservation_r
-            and not self.traveler_p
-        ):
-            self.traveler_p = self._next_traveler_p()
 
         super().save(*args, **kwargs)
 
