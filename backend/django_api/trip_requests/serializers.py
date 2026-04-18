@@ -3,7 +3,8 @@ from django.apps import apps
 from django.db import transaction
 from rest_framework import serializers
 
-from .models import TripRequest, TripRequestNote, ReservationSequence
+from django.contrib.auth.hashers import make_password
+from .models import Customer, TripRequest, TripRequestNote, ReservationSequence
 
 
 # ==================================
@@ -26,6 +27,9 @@ class TripRequestCRMListSerializer(serializers.ModelSerializer):
 
     # ✅ lead_code property في الموديل → لازم نعرّفه صراحة
     lead_code = serializers.CharField(read_only=True)
+
+    leader_full_name = serializers.CharField(source="customer.full_name", read_only=True)
+    leader_phone = serializers.CharField(source="customer.phone", read_only=True)
 
     class Meta:
         model = TripRequest
@@ -84,6 +88,17 @@ class TripRequestDetailSerializer(serializers.ModelSerializer):
 
     # ✅ related_name في الموديل = "crm_notes" (مش notes_set)
     notes = TripRequestNoteSerializer(many=True, read_only=True, source="crm_notes")
+
+    leader_full_name = serializers.CharField(source="customer.full_name", read_only=True)
+    leader_phone = serializers.CharField(source="customer.phone", read_only=True)
+    leader_whatsapp = serializers.CharField(source="customer.whatsapp", read_only=True)
+    leader_email = serializers.CharField(source="customer.email", read_only=True)
+    leader_gender = serializers.CharField(source="customer.gender", read_only=True)
+    leader_age = serializers.IntegerField(source="customer.age", read_only=True)
+    leader_nationality = serializers.CharField(source="customer.nationality", read_only=True)
+    leader_resident_country = serializers.CharField(source="customer.resident_country", read_only=True)
+    leader_identity_type = serializers.CharField(source="customer.identity_type", read_only=True)
+    leader_identity_last4 = serializers.CharField(source="customer.identity_last4", read_only=True)
 
     class Meta:
         model = TripRequest
@@ -173,6 +188,18 @@ class TripRequestCreateSerializer(serializers.ModelSerializer):
     terms_accepted = serializers.BooleanField(required=True)
     docs_acknowledged = serializers.BooleanField(required=False, default=False)
 
+    leader_full_name = serializers.CharField(required=False, allow_blank=True)
+    leader_phone = serializers.CharField(required=False, allow_blank=True)
+    leader_whatsapp = serializers.CharField(required=False, allow_blank=True)
+    leader_email = serializers.EmailField(required=False, allow_blank=True)
+    leader_gender = serializers.CharField(required=False, allow_blank=True)
+    leader_age = serializers.IntegerField(required=False, allow_null=True)
+    leader_nationality = serializers.CharField(required=False, allow_blank=True)
+    leader_resident_country = serializers.CharField(required=False, allow_blank=True)
+    leader_identity_type = serializers.CharField(required=False, allow_blank=True)
+    leader_identity_last4 = serializers.CharField(required=False, allow_blank=True)
+    leader_identity_number = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
     class Meta:
         model = TripRequest
         fields = (
@@ -201,6 +228,7 @@ class TripRequestCreateSerializer(serializers.ModelSerializer):
             "leader_resident_country",
             "leader_identity_type",
             "leader_identity_last4",
+            "leader_identity_number",
             "entry_type_for_egypt",
             "travelers",
             "children_details",
@@ -330,6 +358,29 @@ class TripRequestCreateSerializer(serializers.ModelSerializer):
         trip_title = validated_data.get("trip_title", "")
 
         with transaction.atomic():
+            # Create Customer
+            identity_number = validated_data.pop("leader_identity_number", "")
+            identity_last4 = validated_data.pop("leader_identity_last4", "")
+            if identity_number and not identity_last4:
+                identity_last4 = identity_number[-4:] if len(identity_number) >= 4 else identity_number
+            identity_hash = make_password(identity_number) if identity_number else ""
+
+            customer = Customer.objects.create(
+                full_name=validated_data.pop("leader_full_name", ""),
+                phone=validated_data.pop("leader_phone", ""),
+                whatsapp=validated_data.pop("leader_whatsapp", ""),
+                email=validated_data.pop("leader_email", ""),
+                gender=validated_data.pop("leader_gender", ""),
+                age=validated_data.pop("leader_age", None),
+                nationality=validated_data.pop("leader_nationality", ""),
+                resident_country=validated_data.pop("leader_resident_country", ""),
+                identity_type=validated_data.pop("leader_identity_type", ""),
+                identity_last4=identity_last4,
+                identity_hash=identity_hash
+            )
+
+            validated_data["customer"] = customer
+
             # create أولًا عشان ناخد pk
             tr = TripRequest.objects.create(**validated_data)
 
