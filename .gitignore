@@ -38,6 +38,7 @@ backend/django_api/staticfiles/
 # Django env
 backend/django_api/.env
 backend/django_api/.env.*
+!backend/django_api/.env.example
 backend/django_api/static/
 
 # OS / Editor
