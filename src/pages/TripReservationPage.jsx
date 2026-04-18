@@ -367,9 +367,9 @@ export default function TripReservationPage() {
         nationality: form.nationality,
         residentCountry: form.residentCountry,
         identityType: isEgyptian ? "NATIONAL_ID" : "PASSPORT",
-        identityLast4: isEgyptian
-          ? String(form.nationalId || "").slice(-4)
-          : String(form.passportNumber || "").slice(-4),
+        identityNumber: isEgyptian
+          ? String(form.nationalId || "")
+          : String(form.passportNumber || ""),
 
         entryTypeForEgypt: form.entryTypeForEgypt,
 
@@ -386,7 +386,9 @@ export default function TripReservationPage() {
       };
 
       const res = await submitTripRequest(payload);
-      const createdCode =
+      const createdId =
+        res?.id ||
+        res?.data?.id ||
         res?.trip_code ||
         res?.tripCode ||
         res?.data?.trip_code ||
@@ -394,8 +396,8 @@ export default function TripReservationPage() {
 
       setStatusMsg({
         type: "ok",
-        text: createdCode
-          ? `Reservation created ✅ Trip code: ${createdCode}`
+        text: createdId
+          ? `Reservation created ✅ Booking ID: ${createdId}`
           : "Reservation created ✅",
       });
 
