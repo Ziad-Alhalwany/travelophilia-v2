@@ -266,7 +266,7 @@ function buildTripRequestSnakePayload(
       resident_country: String(t.residentCountry || "").trim(),
 
       identity_type: tIsEg ? "NATIONAL_ID" : "PASSPORT",
-      identity_last4: tIdentityLast4,
+      identity_number: tIdentityRaw,
 
       entry_type_for_egypt: tIsEg
         ? ""
@@ -323,7 +323,7 @@ function buildTripRequestSnakePayload(
     leader_resident_country: String(form.residentCountry || "").trim(),
 
     leader_identity_type: leaderIsEg ? "NATIONAL_ID" : "PASSPORT",
-    leader_identity_last4: leaderIdentityLast4,
+    leader_identity_number: leaderIdentityRaw,
 
     entry_type_for_egypt: leaderIsEg
       ? ""
@@ -903,15 +903,16 @@ export default function CustomizeYourTripPage() {
 
       const res = await api.post(SUBMIT_ENDPOINT, payload);
 
-      // ✅ لو السيرفر رجّع trip_code الحقيقي نخزّنه بدل اللي متولد محليًا
+      // ✅ لو السيرفر رجّع DB ID أو trip_code الحقيقي نخزّنه
       const serverTripCode =
+        res?.data?.id ||
         res?.data?.trip_code ||
         res?.data?.tripCode ||
         res?.data?.trip_code_internal ||
         "";
 
       if (serverTripCode) {
-        setForm((p) => ({ ...p, tripCode: serverTripCode }));
+        setForm((p) => ({ ...p, tripCode: String(serverTripCode) }));
       }
 
       setSysSave({ status: "success", error: "" });
