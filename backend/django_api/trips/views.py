@@ -7,6 +7,7 @@ from rest_framework import status
 
 from .models import Trip, Destination, Activity
 from .serializers import TripSerializer, DestinationSerializer, ActivitySerializer
+from trip_requests.serializers import TripRequestCreateSerializer
 
 
 def normalize_code_or_slug(s: str) -> str:
@@ -108,7 +109,11 @@ class LegacyCustomTripView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        return Response(
-            {"success": True, "message": "Custom trip request received."},
-            status=status.HTTP_201_CREATED,
-        )
+        serializer = TripRequestCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"success": True, "message": "Custom trip request received.", "data": serializer.data},
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
