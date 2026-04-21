@@ -10,11 +10,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 import os
 
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -24,10 +29,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # SECURITY WARNING: keep the secret key used in production secret!
+<<<<<<< HEAD
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-dev-only')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
+=======
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-)pv6i61vfls5yygfoqt+ta2asqt*r49b9%byu(09z5bdprd8##')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
+>>>>>>> origin/owner/integration
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
@@ -95,9 +107,15 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("DB_NAME", "travelophilia"),
         "USER": os.getenv("DB_USER", "travelophilia_owner"),
+<<<<<<< HEAD
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+=======
         "PASSWORD": os.getenv("DB_PASSWORD", "123"),
         "HOST": os.getenv("DB_HOST", "localhost"),
         "PORT": os.getenv("DB_PORT", "6666"),
+>>>>>>> origin/owner/integration
     }
 }
 
