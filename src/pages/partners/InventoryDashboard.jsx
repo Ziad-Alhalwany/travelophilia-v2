@@ -3,7 +3,7 @@
 // Premium dark-themed B2B extranet interface with Zod validation
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 import toast, { Toaster } from "react-hot-toast";
 import { DayPicker } from "react-day-picker";
@@ -44,11 +44,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import authStorage from "@/services/authStorage";
-import {
-  fetchAvailability,
-  fetchPropertyMetadata,
-  bulkUpdateAvailability,
-} from "./inventoryApi";
+import { api } from "@/services/apiClient";
+import { usePropertyAvailability, useBulkInventoryUpdate } from "@/hooks/useOtaServices";
 import {
   buildBulkUpdatePayload,
   formatCurrency,
@@ -124,6 +121,8 @@ const STATUS_COLORS = {
 // ────────────────────────────────────────────────────────────
 export default function InventoryDashboard() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const propertyId = Number(id || 1);
 
   // Auth guard — redirect if no token
   useEffect(() => {
@@ -134,15 +133,31 @@ export default function InventoryDashboard() {
   }, [navigate]);
 
   // ── State ──
-  const [propertyId] = useState(1); // TODO: from route params or user context
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return { month: now.getMonth() + 1, year: now.getFullYear() };
   });
-  const [calendarData, setCalendarData] = useState([]);
   const [metadata, setMetadata] = useState({ room_types: [], rate_plans: [] });
-  const [loading, setLoading] = useState(false);
-  const [calendarLoading, setCalendarLoading] = useState(false);
+
+  // Live custom hook bindings
+  const {
+    loading: calendarLoading,
+    error: calendarError,
+    data: availabilityData,
+    execute: fetchAvailability,
+    abort: abortAvailability,
+  } = usePropertyAvailability();
+
+  const {
+    loading: submitting,
+    error: bulkUpdateError,
+    execute: runBulkUpdate,
+  } = useBulkInventoryUpdate();
+
+  // Extract calendar data from hook response
+  const calendarData = useMemo(() => {
+    return availabilityData?.calendar || availabilityData || [];
+  }, [availabilityData]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -154,40 +169,27 @@ export default function InventoryDashboard() {
     allocation: "",
   });
   const [formErrors, setFormErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
 
   // ── Data Fetching ──
-  const loadCalendar = useCallback(async () => {
-    setCalendarLoading(true);
-    try {
-      const data = await fetchAvailability(
-        propertyId,
-        currentMonth.month,
-        currentMonth.year
-      );
-      setCalendarData(data?.calendar || []);
-    } catch (err) {
-      toast.error(err?.message || "Failed to load calendar data");
-    } finally {
-      setCalendarLoading(false);
-    }
-  }, [propertyId, currentMonth]);
+  useEffect(() => {
+    fetchAvailability(propertyId, currentMonth.month, currentMonth.year);
+    return () => {
+      abortAvailability();
+    };
+  }, [propertyId, currentMonth, fetchAvailability, abortAvailability]);
 
   const loadMetadata = useCallback(async () => {
     try {
-      const data = await fetchPropertyMetadata();
+      const res = await api.get("/properties/metadata/");
+      const data = res.data?.data || res.data;
       setMetadata({
-        room_types: data?.room_types || [],
-        rate_plans: data?.rate_plans || RATE_PLANS.map((r) => r),
+        room_types: data?.roomTypes || data?.room_types || [],
+        rate_plans: data?.ratePlans || data?.rate_plans || RATE_PLANS,
       });
     } catch (err) {
       console.error("Failed to load metadata:", err);
     }
   }, []);
-
-  useEffect(() => {
-    loadCalendar();
-  }, [loadCalendar]);
 
   useEffect(() => {
     loadMetadata();
@@ -248,42 +250,43 @@ export default function InventoryDashboard() {
       return;
     }
 
-    setSubmitting(true);
     try {
-      const payload = buildBulkUpdatePayload({
+      const payload = {
         roomTypeId: Number(formData.roomTypeId),
         ratePlan: formData.ratePlan,
         startDate: formData.startDate,
         endDate: formData.endDate,
-        price: formData.price,
-        allocation: formData.allocation,
-      });
+        price: Number(formData.price),
+        allocation: Number(formData.allocation),
+      };
 
-      const response = await bulkUpdateAvailability(propertyId, payload);
-      toast.success(
-        response?.message ||
-          `Availability updated for ${response?.updated_dates || "all"} dates!`,
-        {
-          icon: "✅",
-          duration: 4000,
-          style: {
-            background: "hsl(205 37% 10%)",
-            color: "hsl(210 20% 92%)",
-            border: "1px solid hsl(172 100% 42% / 0.3)",
-          },
-        }
-      );
-      // Refresh calendar
-      loadCalendar();
-      // Reset form
-      setFormData({
-        startDate: "",
-        endDate: "",
-        roomTypeId: "",
-        ratePlan: "",
-        price: "",
-        allocation: "",
-      });
+      const response = await runBulkUpdate(propertyId, payload);
+      
+      if (response) {
+        toast.success(
+          response?.message || "Availability updated successfully!",
+          {
+            icon: "✅",
+            duration: 4000,
+            style: {
+              background: "hsl(205 37% 10%)",
+              color: "hsl(210 20% 92%)",
+              border: "1px solid hsl(172 100% 42% / 0.3)",
+            },
+          }
+        );
+        // Refresh calendar
+        fetchAvailability(propertyId, currentMonth.month, currentMonth.year);
+        // Reset form
+        setFormData({
+          startDate: "",
+          endDate: "",
+          roomTypeId: "",
+          ratePlan: "",
+          price: "",
+          allocation: "",
+        });
+      }
     } catch (err) {
       toast.error(err?.message || "Bulk update failed. Please try again.", {
         style: {
@@ -292,8 +295,6 @@ export default function InventoryDashboard() {
           border: "1px solid hsl(351 100% 71% / 0.3)",
         },
       });
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -380,6 +381,12 @@ export default function InventoryDashboard() {
             </CardHeader>
 
             <CardContent className="p-4">
+              {calendarError && (
+                <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>{calendarError}</span>
+                </div>
+              )}
               {calendarLoading ? (
                 <div className="flex h-64 items-center justify-center">
                   <Loader2 className="size-8 animate-spin text-primary" />
@@ -702,6 +709,13 @@ export default function InventoryDashboard() {
                     )}
                   </div>
                 </div>
+
+                {bulkUpdateError && (
+                  <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive flex items-center gap-2">
+                    <AlertCircle className="size-3.5 shrink-0" />
+                    <span>{bulkUpdateError}</span>
+                  </div>
+                )}
 
                 {/* Submit */}
                 <Button

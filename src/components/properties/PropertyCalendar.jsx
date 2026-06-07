@@ -2,7 +2,7 @@
 // TP-OTA-FE-EXTRANET-003 — Calendar grid with inactive date interceptor + waitlist modal
 // Consumes GET /api/properties/search/ response matrix
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { DayPicker } from "react-day-picker";
 import toast from "react-hot-toast";
 import { z } from "zod";
@@ -16,8 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Bell, Mail, Loader2 } from "lucide-react";
-import { submitWaitlist } from "@/pages/partners/inventoryApi";
+import { Bell, Mail, Loader2, AlertCircle } from "lucide-react";
+import { useOtaSearch, useWaitlistSubmit } from "@/hooks/useOtaServices";
 import { formatDateISO } from "@/utils/markupHelpers";
 
 // Zod schema for waitlist email
@@ -39,26 +39,106 @@ export default function PropertyCalendar({
   propertyId,
   propertyName = "",
   availability = [],
+  roomTypeId,
   className,
 }) {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+
+  // Live custom hook bindings
+  const {
+    loading: searchLoading,
+    error: searchError,
+    data: searchData,
+    execute: runSearch,
+    abort: abortSearch,
+  } = useOtaSearch();
+
+  const {
+    loading: submitting,
+    error: waitlistError,
+    execute: runWaitlistSubmit,
+  } = useWaitlistSubmit();
+
+  // Trigger search on mount or propertyId change
+  useEffect(() => {
+    if (propertyId) {
+      runSearch({ accommodationId: Number(propertyId) });
+    }
+    return () => {
+      abortSearch();
+    };
+  }, [propertyId, runSearch, abortSearch]);
+
+  // Aggregate active availability from search results or prop fallback
+  const activeAvailability = useMemo(() => {
+    if (!searchData) {
+      return availability || [];
+    }
+    if (searchData.status === "UNAVAILABLE_NOT_SET") {
+      return [];
+    }
+    if (Array.isArray(searchData)) {
+      const dateMap = {};
+      searchData.forEach((roomType) => {
+        if (Array.isArray(roomType.dailyBreakdown)) {
+          roomType.dailyBreakdown.forEach((day) => {
+            const dateStr = day.date;
+            const rooms = day.roomsAvailable;
+            const price = day.pricePerNight;
+
+            if (!dateMap[dateStr]) {
+              dateMap[dateStr] = {
+                date: dateStr,
+                roomsLeft: rooms,
+                price: price,
+                status: rooms === 0 ? "UNAVAILABLE_SOLD_OUT" : "AVAILABLE",
+              };
+            } else {
+              dateMap[dateStr].roomsLeft = Math.max(dateMap[dateStr].roomsLeft, rooms);
+              dateMap[dateStr].price = Math.min(dateMap[dateStr].price, price);
+              if (dateMap[dateStr].roomsLeft > 0) {
+                dateMap[dateStr].status = "AVAILABLE";
+              } else {
+                dateMap[dateStr].status = "UNAVAILABLE_SOLD_OUT";
+              }
+            }
+          });
+        }
+      });
+      return Object.values(dateMap);
+    }
+    return [];
+  }, [searchData, availability]);
 
   // Build a map of date -> status for quick lookup
   const dateStatusMap = useMemo(() => {
     const map = new Map();
-    availability.forEach((item) => {
+    activeAvailability.forEach((item) => {
+      let status = item.status;
+      const roomsLeft = item.roomsLeft ?? item.rooms_left ?? item.allocation;
+      
+      // Explicitly categorize state cells
+      if (roomsLeft === 0 || status === "UNAVAILABLE_SOLD_OUT" || status === "SOLD_OUT") {
+        status = "SOLD_OUT";
+      } else if (roomsLeft != null && roomsLeft <= 2) {
+        status = "Low Stock";
+      } else if (status === "UNAVAILABLE_NOT_SET" || status === "NOT_SET") {
+        status = "UNAVAILABLE_NOT_SET";
+      } else {
+        status = "AVAILABLE";
+      }
+
       map.set(item.date, {
-        status: item.status || item.availability?.status,
-        roomsLeft: item.rooms_left ?? item.roomsLeft ?? item.allocation,
-        price: item.price ?? item.final_price ?? item.base_price,
+        status,
+        roomsLeft,
+        price: item.price ?? item.pricePerNight,
       });
     });
     return map;
-  }, [availability]);
+  }, [activeAvailability]);
 
   // Dates that are UNAVAILABLE_NOT_SET — grayed out
   const unavailableNotSetDates = useMemo(() => {
@@ -75,7 +155,7 @@ export default function PropertyCalendar({
   const soldOutDates = useMemo(() => {
     const dates = [];
     dateStatusMap.forEach((val, dateStr) => {
-      if (val.status === "UNAVAILABLE_SOLD_OUT") {
+      if (val.status === "SOLD_OUT") {
         dates.push(new Date(dateStr + "T00:00:00"));
       }
     });
@@ -87,8 +167,9 @@ export default function PropertyCalendar({
     (day) => {
       const dateStr = formatDateISO(day);
       const info = dateStatusMap.get(dateStr);
+      const status = info?.status || "UNAVAILABLE_NOT_SET";
 
-      if (info?.status === "UNAVAILABLE_NOT_SET") {
+      if (status === "UNAVAILABLE_NOT_SET") {
         setSelectedDate(dateStr);
         setEmail("");
         setEmailError("");
@@ -109,14 +190,15 @@ export default function PropertyCalendar({
       return;
     }
 
-    setSubmitting(true);
     try {
-      await submitWaitlist({
-        property_id: propertyId,
-        user_email: email,
-        check_in: selectedDate,
-        check_out: selectedDate, // single date notification
+      const targetRoomTypeId = Number(roomTypeId || searchData?.[0]?.roomTypeId || 1);
+      await runWaitlistSubmit({
+        accommodationId: Number(propertyId),
+        roomTypeId: targetRoomTypeId,
+        requestedDate: selectedDate,
+        userEmail: email,
       });
+
       toast.success("You'll be notified when availability opens!", {
         icon: "🔔",
         style: {
@@ -135,8 +217,6 @@ export default function PropertyCalendar({
           border: "1px solid hsl(351 100% 71% / 0.3)",
         },
       });
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -145,11 +225,19 @@ export default function PropertyCalendar({
     const dateStr = formatDateISO(day.date);
     const info = dateStatusMap.get(dateStr);
 
-    if (!info) return <span>{day.date.getDate()}</span>;
+    if (!info) {
+      return (
+        <div className="relative flex size-full flex-col items-center justify-center">
+          <span className="text-sm font-medium text-muted-foreground/40">
+            {day.date.getDate()}
+          </span>
+        </div>
+      );
+    }
 
     const isNotSet = info.status === "UNAVAILABLE_NOT_SET";
-    const isSoldOut = info.status === "UNAVAILABLE_SOLD_OUT";
-    const isLowStock = info.status === "AVAILABLE" && info.roomsLeft != null && info.roomsLeft <= 2;
+    const isSoldOut = info.status === "SOLD_OUT";
+    const isLowStock = info.status === "Low Stock";
 
     return (
       <div className="relative flex size-full flex-col items-center justify-center">
@@ -190,44 +278,57 @@ export default function PropertyCalendar({
 
   return (
     <div className={cn("w-full", className)}>
-      <DayPicker
-        mode="single"
-        showOutsideDays={false}
-        modifiers={modifiers}
-        modifiersClassNames={modifiersClassNames}
-        onDayClick={handleDayClick}
-        components={{
-          DayContent: renderDayContent,
-        }}
-        classNames={{
-          months: "flex flex-col sm:flex-row gap-4",
-          month: "flex flex-col gap-2",
-          caption: "flex justify-center relative items-center h-10",
-          caption_label: "text-sm font-semibold text-foreground",
-          nav: "flex items-center gap-1",
-          nav_button: cn(
-            "inline-flex size-8 items-center justify-center rounded-lg border border-input bg-transparent p-0 text-sm transition-colors",
-            "hover:bg-muted hover:text-foreground"
-          ),
-          nav_button_previous: "absolute left-1",
-          nav_button_next: "absolute right-1",
-          table: "w-full border-collapse",
-          head_row: "flex",
-          head_cell: "w-10 text-center text-xs font-medium text-muted-foreground",
-          row: "flex w-full mt-1",
-          cell: cn(
-            "relative size-10 p-0 text-center text-sm",
-            "focus-within:relative focus-within:z-20"
-          ),
-          day: cn(
-            "flex size-10 items-center justify-center rounded-lg p-0 text-sm transition-colors",
-            "hover:bg-muted/60 aria-selected:bg-primary aria-selected:text-primary-foreground"
-          ),
-          day_today: "ring-1 ring-primary/40",
-          day_outside: "text-muted-foreground/30",
-          day_disabled: "text-muted-foreground/20",
-        }}
-      />
+      {searchError && (
+        <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{searchError}</span>
+        </div>
+      )}
+      
+      {searchLoading ? (
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <DayPicker
+          mode="single"
+          showOutsideDays={false}
+          modifiers={modifiers}
+          modifiersClassNames={modifiersClassNames}
+          onDayClick={handleDayClick}
+          components={{
+            DayContent: renderDayContent,
+          }}
+          classNames={{
+            months: "flex flex-col sm:flex-row gap-4",
+            month: "flex flex-col gap-2",
+            caption: "flex justify-center relative items-center h-10",
+            caption_label: "text-sm font-semibold text-foreground",
+            nav: "flex items-center gap-1",
+            nav_button: cn(
+              "inline-flex size-8 items-center justify-center rounded-lg border border-input bg-transparent p-0 text-sm transition-colors",
+              "hover:bg-muted hover:text-foreground"
+            ),
+            nav_button_previous: "absolute left-1",
+            nav_button_next: "absolute right-1",
+            table: "w-full border-collapse",
+            head_row: "flex",
+            head_cell: "w-10 text-center text-xs font-medium text-muted-foreground",
+            row: "flex w-full mt-1",
+            cell: cn(
+              "relative size-10 p-0 text-center text-sm",
+              "focus-within:relative focus-within:z-20"
+            ),
+            day: cn(
+              "flex size-10 items-center justify-center rounded-lg p-0 text-sm transition-colors",
+              "hover:bg-muted/60 aria-selected:bg-primary aria-selected:text-primary-foreground"
+            ),
+            day_today: "ring-1 ring-primary/40",
+            day_outside: "text-muted-foreground/30",
+            day_disabled: "text-muted-foreground/20",
+          }}
+        />
+      )}
 
       {/* Waitlist Modal */}
       <Dialog open={waitlistOpen} onOpenChange={setWaitlistOpen}>
@@ -280,6 +381,9 @@ export default function PropertyCalendar({
               </div>
               {emailError && (
                 <p className="text-xs text-destructive">{emailError}</p>
+              )}
+              {waitlistError && (
+                <p className="text-xs text-destructive">{waitlistError}</p>
               )}
             </div>
 
