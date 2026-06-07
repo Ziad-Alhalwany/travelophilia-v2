@@ -1,0 +1,4 @@
+﻿WORKTREE: D:\ZIAD Alhalwany\TRAVILOPHILIA\TRAVELOPHILIA WEBSITE\_worktrees\planner
+BRANCH: agent/analytics
+EXPECTED: agent/planner
+DATE: 20260201-212000
