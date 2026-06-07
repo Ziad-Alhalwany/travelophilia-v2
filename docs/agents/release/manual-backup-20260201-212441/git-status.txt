@@ -1,0 +1,8 @@
+﻿UU .gitignore
+D  backend/django_api/trips/tests.py
+A  backend/django_api/trips/tests/__init__.py
+A  backend/django_api/trips/tests/test_concurrency.py
+A  backend/django_api/trips/tests/test_lookup.py
+M  backend/django_api/trips/views.py
+A  docs/product/policy.md
+AA docs/tasks.md

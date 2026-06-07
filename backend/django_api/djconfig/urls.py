@@ -15,4 +15,5 @@ urlpatterns = [
     # ===== APIs =====
     path("api/", include("trips.urls")),
     path("api/", include("trip_requests.urls")),
+    path("api/", include("properties.urls")),
 ]
