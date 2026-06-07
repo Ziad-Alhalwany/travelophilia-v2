@@ -1,0 +1,460 @@
+﻿diff --git a/.gitignore b/.gitignore
+index 9bd3281..205df6a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -53,4 +53,11 @@ media/
+ .env
+ .env.*
+ venv/
+-.venv/
+\ No newline at end of file
++.venv/
++
++# Agent auto-exported reports (local runs)
++docs/agents/**/reports/_runs/
++docs/agents/**/reviews/_runs/
++
++# Shared agents reports (junction / operational only)
++docs/agents/
+diff --git a/README.md b/README.md
+index e69de29..70fb391 100644
+--- a/README.md
++++ b/README.md
+@@ -0,0 +1,46 @@
++<div dir="rtl">
++
++# Travelophilia v2
++
++> "╪Ñ┘å╪¬ ┘à╪┤ ┘ä┘ê╪¡╪»┘âΓÇª ╪Ñ╪¡┘å╪º ╪¿┘å╪¿┘å┘è ╪¬╪¼╪▒╪¿╪⌐ ┘ê┘å╪¬╪º╪¿╪╣┘ç╪º╪î ┘ê┘â┘ä ╪«╪╖┘ê╪⌐ ┘ê╪º╪╢╪¡╪⌐."
++
++## 1) Tech Stack
++- React (Vite)
++- Django (DRF)
++- PostgreSQL
++
++## 2) ╪¬╪┤╪║┘è┘ä ╪º┘ä┘à╪┤╪▒┘ê╪╣ ┘à╪¡┘ä┘è┘ï╪º (Windows)
++
++### Frontend
++┘à┘å ╪¼╪░╪▒ ╪º┘ä┘à╪┤╪▒┘ê╪╣:
++- `npm install`
++- `npm run dev`
++
++### Backend (Django)
++╪º╪»╪«┘ä ┘à╪│╪º╪▒ ╪º┘ä╪¿╪º┘â (╪╣╪»┘æ┘ä┘ç ┘ä┘ê ┘à╪«╪¬┘ä┘ü ╪╣┘å╪»┘â):
++- `cd backend/django_api`
++
++╪½┘à:
++- `python -m venv .venv`
++- `.venv\\Scripts\\activate`
++- `pip install -r requirements.txt`
++- `python manage.py migrate`
++- `python manage.py runserver`
++
++## 3) Environment
++- ╪º┘å╪│╪« `.env.example` ╪Ñ┘ä┘ë `.env` (┘ä┘ê ┘à╪╖┘ä┘ê╪¿)
++- ┘à┘à┘å┘ê╪╣ ╪▒┘ü╪╣ `.env` ╪º┘ä╪¡┘é┘è┘é┘è ╪╣┘ä┘ë git ╪ú┘ê GitHub
++
++## 4) Docs
++- `docs/overview.md` ΓÇö ╪╡┘ê╪▒╪⌐ ┘â╪¿┘è╪▒╪⌐ ┘ä┘ä┘à╪┤╪▒┘ê╪╣
++- `docs/api.md` ΓÇö ╪╣┘é╪» ╪º┘ä┘ÇAPI
++- `docs/tasks.md` ΓÇö ┘ä┘ê╪¡╪⌐ ╪º┘ä┘à┘ç╪º┘à
++- `docs/product/` ΓÇö UX & Product
++- `docs/crm/` + `docs/ops/` ΓÇö ╪¬╪┤╪║┘è┘ä ┘ü╪╣┘ä┘è
++
++## 5) Git Workflow (┘à╪«╪¬╪╡╪▒)
++- Agents ┘è╪╣┘à┘ä┘ê╪º ╪╣┘ä┘ë ┘ü╪▒┘ê╪╣┘ç┘à ┘ü┘é╪╖: `agent/*`
++- ╪º┘ä╪»┘à╪¼ ┘ä┘ä╪¬╪¼╪▒╪¿╪⌐: `owner/integration`
++- ╪º┘ä┘ÇPush ┘ê╪º┘ä┘ÇPR ┘ê╪º┘ä┘ÇMerge ╪╣┘ä┘ë GitHub: ╪▓┘è╪º╪» ┘ü┘é╪╖
++
++</div>
+diff --git a/SECURITY.md b/SECURITY.md
+index 034e848..5902608 100644
+--- a/SECURITY.md
++++ b/SECURITY.md
+@@ -1,21 +1,33 @@
+-# Security Policy
++<div dir="rtl">
+ 
+-## Supported Versions
++# Security ΓÇö Travelophilia
+ 
+-Use this section to tell people about which versions of your project are
+-currently being supported with security updates.
++## 1) Secrets Management
++- ┘à┘à┘å┘ê╪╣ ╪¬╪«╪▓┘è┘å secrets ┘ü┘è git:
++  - `.env`
++  - private keys
++  - tokens
++- ╪º╪│╪¬╪«╪»┘à `.env.example` ┘ü┘é╪╖.
+ 
+-| Version | Supported          |
+-| ------- | ------------------ |
+-| 5.1.x   | :white_check_mark: |
+-| 5.0.x   | :x:                |
+-| 4.0.x   | :white_check_mark: |
+-| < 4.0   | :x:                |
++## 2) Access Rules
++- ┘ä╪º Push/PR/Merge ╪╣┘ä┘ë GitHub ╪¿┘ê╪º╪│╪╖╪⌐ Agents
++- ╪º┘ä╪╣┘à┘ä ╪╣┘ä┘ë main ┘à┘à┘å┘ê╪╣
+ 
+-## Reporting a Vulnerability
++## 3) Web Security Baseline
++- ╪¬┘ü╪╣┘è┘ä ╪¡┘à╪º┘è╪⌐ CSRF (┘ä┘ê ┘ü┘è sessions)
++- CORS ┘à╪╢╪¿┘ê╪╖ (domains ┘à╪¡╪»╪»╪⌐)
++- Validation ┘ü┘è Backend ┘ç┘ê ╪º┘ä╪¡┘â┘à ╪º┘ä┘å┘ç╪º╪ª┘è
++- Logging ┘ä┘ä╪ú╪«╪╖╪º╪í ╪º┘ä┘à┘ç┘à╪⌐ ╪¿╪»┘ê┘å ╪¿┘è╪º┘å╪º╪¬ ╪¡╪│╪º╪│╪⌐
+ 
+-Use this section to tell people how to report a vulnerability.
++## 4) Data Privacy
++- ╪ú┘é┘ä ┘é╪»╪▒ ┘à┘å ╪º┘ä╪¿┘è╪º┘å╪º╪¬
++- ╪▒┘é┘à ┘ê╪º╪¬╪│╪º╪¿/╪º╪│┘à: ╪¬╪╣╪º┘à┘ä ┘â┘ÇPII
++- ┘à┘à┘å┘ê╪╣ ╪Ñ╪▒╪│╪º┘ä ╪¿┘è╪º┘å╪º╪¬ ╪º┘ä╪╣┘à┘è┘ä ┘ü┘è logs ╪ú┘ê screenshots ╪╣╪º┘à╪⌐
+ 
+-Tell them where to go, how often they can expect to get an update on a
+-reported vulnerability, what to expect if the vulnerability is accepted or
+-declined, etc.
++## 5) Responsible Disclosure
++┘ä┘ê ╪º┘â╪¬╪┤┘ü╪¬ ╪½╪║╪▒╪⌐:
++- ┘ê╪½┘æ┘é┘ç╪º ╪»╪º╪«┘ä┘è┘ï╪º
++- ┘ä╪º ╪¬┘å╪┤╪▒┘ç╪º
++- ╪º╪▒┘ü╪╣ ╪¬┘é╪▒┘è╪▒ ┘ä╪▓┘è╪º╪»/Release Agent
++
++</div>
+diff --git a/src/pages/CustomizeYourTripPage.jsx b/src/pages/CustomizeYourTripPage.jsx
+index d1fa35b..1f057e2 100644
+--- a/src/pages/CustomizeYourTripPage.jsx
++++ b/src/pages/CustomizeYourTripPage.jsx
+@@ -1,10 +1,10 @@
+ // src/pages/CustomizeYourTripPage.jsx
+ import { useEffect, useMemo, useState } from "react";
+ import { useNavigate } from "react-router-dom";
+-import { api } from "../services/apiClient";
++import { api, generateTripRequestCode } from "../services/apiClient"; // Γ£à Use exported service
+ 
+ const SUBMIT_ENDPOINT = "/trip-requests/";
+-const GENERATE_CODE_ENDPOINT = "/trip-requests/generate-code/";
++// GENERATE_CODE_ENDPOINT removed (used via service)
+ const ALLOW_PAST_DATES_FOR_TEAM = false;
+ const DRAFT_KEY = "tp_customize_draft_v7";
+ const WHATSAPP_NUMBER = "201030624545";
+@@ -194,13 +194,14 @@ function flagEmoji(iso2 = "") {
+   return String.fromCodePoint(code0, code1);
+ }
+ function generateTripCode() {
++  // Γ£à Fallback local code if server fails (different format to detect later)
+   const d = new Date();
+   const y = d.getFullYear();
+   const m = String(d.getMonth() + 1).padStart(2, "0");
+   const day = String(d.getDate()).padStart(2, "0");
+   const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+   const t = Date.now().toString(36).toUpperCase().slice(-6);
+-  return `TP-${y}${m}${day}-${t}-${rand}`;
++  return `REQ-LOCAL-${y}${m}${day}-${t}-${rand}`;
+ }
+ function travelerCode(tripCode, index1) {
+   return `${tripCode}-P${index1}`;
+@@ -211,17 +212,17 @@ function travelerCode(tripCode, index1) {
+ // =========================
+ function buildTripRequestSnakePayload(
+   form,
+-  { adults, children, totalPax, isSolo, needsDocs }
++  { adults, children, totalPax, isSolo, needsDocs },
+ ) {
+   const leaderIsEg = isEgyptian(form.nationality);
+ 
+   const leaderPhone = `${String(form.dialCode || "").trim()}${onlyDigits(
+-    form.phoneLocal
++    form.phoneLocal,
+   )}`;
+   const leaderWhatsapp = form.phoneHasWhatsapp
+     ? leaderPhone
+     : `${String(form.whatsappDialCode || "").trim()}${onlyDigits(
+-        form.whatsappLocal
++        form.whatsappLocal,
+       )}`;
+ 
+   const leaderIdentityRaw = leaderIsEg
+@@ -237,12 +238,12 @@ function buildTripRequestSnakePayload(
+     const tIsEg = isEgyptian(t.nationality);
+ 
+     const tPhone = `${String(t.dialCode || "").trim()}${onlyDigits(
+-      t.phoneLocal
++      t.phoneLocal,
+     )}`;
+     const tWhatsapp = t.phoneHasWhatsapp
+       ? tPhone
+       : `${String(t.whatsappDialCode || "").trim()}${onlyDigits(
+-          t.whatsappLocal
++          t.whatsappLocal,
+         )}`;
+ 
+     const tIdentityRaw = tIsEg
+@@ -499,9 +500,12 @@ export default function CustomizeYourTripPage() {
+       try {
+         if (form.tripCode) return;
+ 
+-        const res = await axios.get(GENERATE_CODE_ENDPOINT);
+-        // apiClient ╪¿┘è╪¡┘ê┘æ┘ä response ┘ä┘Ç camelCase
+-        const code = res?.data?.tripCode || res?.data?.trip_code;
++        const res = await generateTripRequestCode(); // Γ£à Use apiClient
++        const code =
++          res?.tripCode ||
++          res?.trip_code ||
++          res?.data?.tripCode ||
++          res?.data?.trip_code;
+ 
+         if (!cancelled && code) {
+           setForm((p) => ({ ...p, tripCode: code }));
+@@ -543,11 +547,11 @@ export default function CustomizeYourTripPage() {
+ 
+   const adults = useMemo(
+     () => Math.max(1, Number(form.adults) || 1),
+-    [form.adults]
++    [form.adults],
+   );
+   const children = useMemo(
+     () => Math.max(0, Number(form.children) || 0),
+-    [form.children]
++    [form.children],
+   );
+   const totalPax = adults + children;
+   const isSolo = totalPax === 1;
+@@ -954,7 +958,7 @@ export default function CustomizeYourTripPage() {
+       lines.push(
+         `- ${travelerCode(form.tripCode, i + 1)} | ${t.fullName} | ${wa} | ${
+           t.nationality
+-        } | ${last4Display(idRaw)} | From: ${origin}`
++        } | ${last4Display(idRaw)} | From: ${origin}`,
+       );
+     }
+ 
+@@ -963,12 +967,12 @@ export default function CustomizeYourTripPage() {
+     lines.push(`From: ${form.originCity}`);
+     lines.push(`To: ${form.destinationCity}`);
+     lines.push(
+-      `Dates: ${formatDMY(form.departDate)} ΓåÆ ${formatDMY(form.returnDate)}`
++      `Dates: ${formatDMY(form.departDate)} ΓåÆ ${formatDMY(form.returnDate)}`,
+     );
+     lines.push(`Pax: ${totalPax} (Adults ${adults}, Children ${children})`);
+     if (!leaderIsEgyptian)
+       lines.push(
+-        `Egypt entry status: ${residenceLabel(form.entryStatusForEgypt)}`
++        `Egypt entry status: ${residenceLabel(form.entryStatusForEgypt)}`,
+       );
+ 
+     lines.push("");
+@@ -976,7 +980,7 @@ export default function CustomizeYourTripPage() {
+     lines.push(`Confirmation requires 50% deposit.`);
+ 
+     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+-      lines.join("\n")
++      lines.join("\n"),
+     )}`;
+   }
+ 
+@@ -1123,7 +1127,7 @@ export default function CustomizeYourTripPage() {
+                 <input
+                   className={`input ${inputClass(
+                     "fullName",
+-                    requiredText(form.fullName)
++                    requiredText(form.fullName),
+                   )}`}
+                   value={form.fullName}
+                   onChange={(e) => update("fullName", e.target.value)}
+@@ -1143,13 +1147,13 @@ export default function CustomizeYourTripPage() {
+                     placeholder="+20"
+                     className={inputClass(
+                       "dialCode",
+-                      requiredText(form.dialCode)
++                      requiredText(form.dialCode),
+                     )}
+                   />
+                   <input
+                     className={`input ${inputClass(
+                       "phoneLocal",
+-                      isValidPhoneLocalDigits(onlyDigits(form.phoneLocal))
++                      isValidPhoneLocalDigits(onlyDigits(form.phoneLocal)),
+                     )}`}
+                     value={form.phoneLocal}
+                     onChange={(e) =>
+@@ -1184,13 +1188,13 @@ export default function CustomizeYourTripPage() {
+                       placeholder="+20"
+                       className={inputClass(
+                         "whatsappDialCode",
+-                        requiredText(form.whatsappDialCode)
++                        requiredText(form.whatsappDialCode),
+                       )}
+                     />
+                     <input
+                       className={`input ${inputClass(
+                         "whatsappLocal",
+-                        isValidPhoneLocalDigits(onlyDigits(form.whatsappLocal))
++                        isValidPhoneLocalDigits(onlyDigits(form.whatsappLocal)),
+                       )}`}
+                       value={form.whatsappLocal}
+                       onChange={(e) =>
+@@ -1208,7 +1212,7 @@ export default function CustomizeYourTripPage() {
+                 <input
+                   className={`input ${inputClass(
+                     "email",
+-                    isValidEmail(form.email)
++                    isValidEmail(form.email),
+                   )}`}
+                   value={form.email}
+                   onChange={(e) => update("email", e.target.value)}
+@@ -1223,7 +1227,7 @@ export default function CustomizeYourTripPage() {
+                   <select
+                     className={`input ${inputClass(
+                       "leaderGender",
+-                      requiredText(form.leaderGender)
++                      requiredText(form.leaderGender),
+                     )}`}
+                     value={form.leaderGender}
+                     onChange={(e) => update("leaderGender", e.target.value)}
+@@ -1240,7 +1244,7 @@ export default function CustomizeYourTripPage() {
+                   <input
+                     className={`input ${inputClass(
+                       "leaderAge",
+-                      Number(form.leaderAge) >= 18
++                      Number(form.leaderAge) >= 18,
+                     )}`}
+                     value={form.leaderAge}
+                     onChange={(e) =>
+@@ -1266,7 +1270,7 @@ export default function CustomizeYourTripPage() {
+                   placeholder="Type to search..."
+                   className={inputClass(
+                     "nationality",
+-                    requiredText(form.nationality)
++                    requiredText(form.nationality),
+                   )}
+                 />
+               </label>
+@@ -1281,7 +1285,7 @@ export default function CustomizeYourTripPage() {
+                   placeholder="Type to search..."
+                   className={inputClass(
+                     "residentCountry",
+-                    requiredText(form.residentCountry)
++                    requiredText(form.residentCountry),
+                   )}
+                 />
+               </label>
+@@ -1297,7 +1301,7 @@ export default function CustomizeYourTripPage() {
+                     maxLength={14}
+                     className={inputClass(
+                       "nationalId",
+-                      onlyDigits(form.nationalId).length === 14
++                      onlyDigits(form.nationalId).length === 14,
+                     )}
+                   />
+                 </label>
+@@ -1316,7 +1320,7 @@ export default function CustomizeYourTripPage() {
+                       maxLength={20}
+                       className={inputClass(
+                         "passportNumber",
+-                        sanitizePassport(form.passportNumber).length >= 5
++                        sanitizePassport(form.passportNumber).length >= 5,
+                       )}
+                     />
+                   </label>
+@@ -1328,7 +1332,7 @@ export default function CustomizeYourTripPage() {
+                         className={`input ${inputClass(
+                           "entryStatusForEgypt",
+                           form.entryStatusForEgypt === "RESIDENCE" ||
+-                            form.entryStatusForEgypt === "TOURIST"
++                            form.entryStatusForEgypt === "TOURIST",
+                         )}`}
+                         value={form.entryStatusForEgypt}
+                         onChange={(e) =>
+@@ -1355,7 +1359,7 @@ export default function CustomizeYourTripPage() {
+                   <input
+                     className={`input ${inputClass(
+                       "originCity",
+-                      requiredText(form.originCity)
++                      requiredText(form.originCity),
+                     )}`}
+                     value={form.originCity}
+                     onChange={(e) => update("originCity", e.target.value)}
+@@ -1369,7 +1373,7 @@ export default function CustomizeYourTripPage() {
+                   <input
+                     className={`input ${inputClass(
+                       "destinationCity",
+-                      requiredText(form.destinationCity)
++                      requiredText(form.destinationCity),
+                     )}`}
+                     value={form.destinationCity}
+                     onChange={(e) => update("destinationCity", e.target.value)}
+@@ -1386,7 +1390,7 @@ export default function CustomizeYourTripPage() {
+                     type="date"
+                     className={`input ${inputClass(
+                       "departDate",
+-                      requiredText(form.departDate) && !!datesValid
++                      requiredText(form.departDate) && !!datesValid,
+                     )}`}
+                     value={form.departDate}
+                     min={minDepart}
+@@ -1401,7 +1405,7 @@ export default function CustomizeYourTripPage() {
+                     type="date"
+                     className={`input ${inputClass(
+                       "returnDate",
+-                      requiredText(form.returnDate) && !!datesValid
++                      requiredText(form.returnDate) && !!datesValid,
+                     )}`}
+                     value={form.returnDate}
+                     min={minReturn}
+@@ -1419,7 +1423,7 @@ export default function CustomizeYourTripPage() {
+                     min={1}
+                     className={`input ${inputClass(
+                       "adults",
+-                      Number(form.adults) >= 1
++                      Number(form.adults) >= 1,
+                     )}`}
+                     value={form.adults}
+                     onChange={(e) => update("adults", Number(e.target.value))}
+@@ -1434,7 +1438,7 @@ export default function CustomizeYourTripPage() {
+                     min={0}
+                     className={`input ${inputClass(
+                       "children",
+-                      Number(form.children) >= 0
++                      Number(form.children) >= 0,
+                     )}`}
+                     value={form.children}
+                     onChange={(e) => update("children", Number(e.target.value))}
+@@ -1571,7 +1575,7 @@ export default function CustomizeYourTripPage() {
+                       value={last4Display(
+                         leaderIsEgyptian
+                           ? onlyDigits(form.nationalId)
+-                          : sanitizePassport(form.passportNumber)
++                          : sanitizePassport(form.passportNumber),
+                       )}
+                       disabled
+                     />
+diff --git a/src/pages/TripDetailsPage.jsx b/src/pages/TripDetailsPage.jsx
+index 11832c1..4f6b714 100644
+--- a/src/pages/TripDetailsPage.jsx
++++ b/src/pages/TripDetailsPage.jsx
+@@ -1,7 +1,7 @@
+ // src/pages/TripDetailsPage.jsx
+ import { useEffect, useMemo, useState } from "react";
+ import { Link, useParams, useSearchParams } from "react-router-dom";
+-import { getTripBySlug } from "../services/apiClient";
++import { getTripBySlug, getDestinationActivities } from "../services/apiClient";
+ 
+ function asUpper(v) {
+   return String(v || "")
+@@ -208,14 +208,10 @@ export default function TripDetailsPage() {
+       setSelectedActs([]);
+       if (!destCode) return;
+ 
+-      // Γ£à ┘ä┘ê ╪╣┘å╪»┘â endpoint: /api/destinations/<CODE>/activities/
+-      // ┘ç┘å╪¼┘è╪¿┘ç╪º ╪¿┘Ç fetch ┘à╪¿╪º╪┤╪▒ (╪╣╪┤╪º┘å ┘à╪º ┘å╪╣╪¬┘à╪»╪┤ ╪╣┘ä┘ë apiClient ┘ä┘ê ┘à╪┤ ╪¼╪º┘ç╪▓)
++      // Γ£à Use apiClient service
+       setActsLoading(true);
+       try {
+-        const res = await fetch(
+-          `/api/destinations/${encodeURIComponent(destCode)}/activities/`
+-        );
+-        const data = await res.json();
++        const data = await getDestinationActivities(destCode);
+         if (!alive) return;
+         setActivities(Array.isArray(data) ? data : []);
+       } catch {

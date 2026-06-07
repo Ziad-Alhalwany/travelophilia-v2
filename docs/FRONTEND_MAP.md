@@ -29,8 +29,8 @@
 | `ActivitiesPage.jsx` | (لا يوجد route حالياً) | أنشطة |
 | `BeAmbassadorPage.jsx` | (لا يوجد route حالياً) | نموذج سفراء |
 | `BeOneOfUsPage.jsx` | (لا يوجد route حالياً) | صفحة تجنيد |
-| `CRMLeadsPage.jsx` | (لا يوجد route حالياً) | لوحة CRM leads |
-| `CRMLoginPage.jsx` | (لا يوجد route حالياً) | تسجيل دخول CRM |
+| `CRMLeadsPage.jsx` | `/crm/leads` | لوحة CRM leads (ملاحظة: الدخول لـ `/crm` يحول تلقائياً إلى هنا) |
+| `CRMLoginPage.jsx` | `/crm/login` | صفحة تسجيل الدخول لموظفي CRM |
 | `CollaborateWithUsPage.jsx` | (لا يوجد route حالياً) | نموذج تعاون |
 | `DestinationPage.jsx` | (لا يوجد route حالياً) | صفحة الوجهة |
 | `SupportTeamPage.jsx` | (لا يوجد route حالياً) | فريق الدعم |
