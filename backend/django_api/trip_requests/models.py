@@ -42,10 +42,43 @@ class Customer(models.Model):
 
     identity_type = models.CharField(max_length=16, blank=True, default="")
     identity_last4 = models.CharField(max_length=8, blank=True, default="")
-    identity_hash = models.CharField(max_length=255, blank=True, default="", help_text="Hashed identity for data masking")
+    identity_hash = models.CharField(max_length=255, unique=True, null=True, blank=True, help_text="Hashed identity for data masking")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __init__(self, *args, **kwargs):
+        self._identity_number = kwargs.pop('identity_number', None)
+        super().__init__(*args, **kwargs)
+
+    @property
+    def identity_number(self):
+        return getattr(self, '_identity_number', None)
+
+    @identity_number.setter
+    def identity_number(self, value):
+        self._identity_number = value
+
+    def save(self, *args, **kwargs):
+        # 1. Enforce PII masking if raw_id is set
+        raw_id = getattr(self, "identity_number", None) or getattr(self, "_identity_number", None)
+        
+        # Check if identity_hash is passed as plain text (doesn't contain $)
+        if not raw_id and self.identity_hash and "$" not in self.identity_hash:
+            raw_id = self.identity_hash
+
+        if raw_id:
+            # extract the last 4 digits
+            self.identity_last4 = raw_id[-4:] if len(raw_id) >= 4 else raw_id
+            # secure cryptographic hash
+            from django.contrib.auth.hashers import make_password
+            self.identity_hash = make_password(raw_id)
+
+        # 2. Support null=True with unique=True by converting empty string/None to None
+        if not self.identity_hash:
+            self.identity_hash = None
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.full_name} ({self.phone})"
@@ -152,8 +185,98 @@ class TripRequest(models.Model):
         return self.trip_code or f"TripRequest #{self.pk}"
 
     # =========================
-    # Computed codes
+    # Computed codes & properties
     # =========================
+
+    @property
+    def leader_full_name(self) -> str:
+        return self.customer.full_name if self.customer else ""
+
+    @leader_full_name.setter
+    def leader_full_name(self, value):
+        if self.customer:
+            self.customer.full_name = value
+
+    @property
+    def leader_phone(self) -> str:
+        return self.customer.phone if self.customer else ""
+
+    @leader_phone.setter
+    def leader_phone(self, value):
+        if self.customer:
+            self.customer.phone = value
+
+    @property
+    def leader_whatsapp(self) -> str:
+        return self.customer.whatsapp if self.customer else ""
+
+    @leader_whatsapp.setter
+    def leader_whatsapp(self, value):
+        if self.customer:
+            self.customer.whatsapp = value
+
+    @property
+    def leader_email(self) -> str:
+        return self.customer.email if self.customer else ""
+
+    @leader_email.setter
+    def leader_email(self, value):
+        if self.customer:
+            self.customer.email = value
+
+    @property
+    def leader_gender(self) -> str:
+        return self.customer.gender if self.customer else ""
+
+    @leader_gender.setter
+    def leader_gender(self, value):
+        if self.customer:
+            self.customer.gender = value
+
+    @property
+    def leader_age(self):
+        return self.customer.age if self.customer else None
+
+    @leader_age.setter
+    def leader_age(self, value):
+        if self.customer:
+            self.customer.age = value
+
+    @property
+    def leader_nationality(self) -> str:
+        return self.customer.nationality if self.customer else ""
+
+    @leader_nationality.setter
+    def leader_nationality(self, value):
+        if self.customer:
+            self.customer.nationality = value
+
+    @property
+    def leader_resident_country(self) -> str:
+        return self.customer.resident_country if self.customer else ""
+
+    @leader_resident_country.setter
+    def leader_resident_country(self, value):
+        if self.customer:
+            self.customer.resident_country = value
+
+    @property
+    def leader_identity_type(self) -> str:
+        return self.customer.identity_type if self.customer else ""
+
+    @leader_identity_type.setter
+    def leader_identity_type(self, value):
+        if self.customer:
+            self.customer.identity_type = value
+
+    @property
+    def leader_identity_last4(self) -> str:
+        return self.customer.identity_last4 if self.customer else ""
+
+    @leader_identity_last4.setter
+    def leader_identity_last4(self, value):
+        if self.customer:
+            self.customer.identity_last4 = value
 
     @property
     def reservation_code(self) -> str:
@@ -184,6 +307,10 @@ class TripRequest(models.Model):
 
     def save(self, *args, **kwargs):
         creating = self.pk is None
+
+        # Save the related Customer if it exists
+        if self.customer:
+            self.customer.save()
 
         if creating and self.trip_public_code and (not self.reservation_r or not self.traveler_p):
             with transaction.atomic():
