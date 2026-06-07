@@ -1,0 +1,15 @@
+﻿ M .gitignore
+ M README.md
+ M SECURITY.md
+?? docs/analytics/
+?? docs/api.md
+?? docs/changelog.md
+?? docs/crm/
+?? docs/finance/
+?? docs/marketing/
+?? docs/ops/
+?? docs/overview.md
+?? docs/planning/
+?? docs/pricing/
+?? docs/product/
+?? docs/tasks.md

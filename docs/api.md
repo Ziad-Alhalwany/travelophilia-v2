@@ -1,296 +1,363 @@
 <div dir="rtl">
 
-# API — Travelophilia (MVP Contract)
+# API Contracts & Endpoints (Travelophilia Production Specs)
 
-> Base Path: `/api`  
-> الهدف: عقد واضح بين React و Django.  
-> **قاعدة:** الـ Backend هو مصدر الحقيقة الدائم (Source of Truth). يُمنع تعديل هذا الملف دون مهام (Task) و Handoff صريح.
-> **نمط التسمية:** كل الـ Endpoints والمخرجات/المدخلات يجب أن تكون **snake_case** حصراً.
+> **Base Path:** `/api`  
+> **قاعدة صارمة:** الـ Backend هو المصدر النهائي للحقيقة (Source of Truth). أي طلبات أو استجابات يجب أن تطابق هذا المستند لمنع الـ Hallucinations.
 
 ---
 
-## 0) قواعد عامة
+## 0) قواعد عامة والتحويل التلقائي (General Rules & Field Mapping)
 
-- كل المدخلات (Requests) والمخرجات (Responses) بصيغة `JSON`.
-- الـ Backend validation هو الحكم النهائي في كل البيانات وحقول الـ Form.
-- نمط الأخطاء (Error format) موحد عبر كل مسارات الـ API وفق معايير المشروع.
-- تنسيق التواريخ هو `YYYY-MM-DD` والأوقات `ISO 8601`.
+- كافة المدخلات والمخرجات بصيغة `JSON`.
+- التسمية الافتراضية في قاعدة البيانات والـ API هي **snake_case**.
+- يدعم نظام التوثيق والتحقق التحويل التلقائي لحقول **camelCase** القديمة القادمة من الواجهات الأمامية إلى حقول **snake_case** قبل المعالجة داخل الـ Serializer.
 
----
+### 🔄 جدول مطابقة الحقول (camelCase to snake_case Mapping)
+عند إرسال طلب إنشاء رحلة أو حجز (`TripRequestCreateSerializer`)، يتم تحويل الحقول تلقائياً كالتالي:
 
-## 1) Trips (List / Detail)
-
-### GET `/api/trips/`
-**الغرض:** عرض قائمة الرحلات المتاحة (Templates/Packages).
-**Method:** `GET`
-**Response 200 (Success):**
-```json
-{
-  "id": 1,
-  "slug": "dahab-adventure",
-  "public_code": "TP-0001-DAHAB",
-  "global_seq": 100,
-  "name": "Dahab 4 Days",
-  "title": "Dahab 4 Days",
-  "location": "Dahab, South Sinai",
-  "type": "adventure",
-  "description": "Amazing Dahab trip",
-  "media": {},
-  "social_proof": {},
-  "priceFrom": 4500,
-  "priceTo": 6000,
-  "currency": "EGP",
-  "durationNights": 3,
-  "durationLabel": "3N",
-  "tags": ["diving", "sea"],
-  "highlights": ["Blue Hole", "Three Pools"],
-  "destinationCity": "Dahab",
-  "startDate": "2026-05-01",
-  "availableDate": "2026-06-01",
-  "is_active": true,
-  "dest_code": "DHB",
-  "from_code": "CAI",
-  "to_code": "DHB",
-  "internal_key": "dahab_3n",
-  "internal_seq": 1
-}
-```
-
-### GET `/api/trips/{identifier}/`
-**الغرض:** عرض تفاصيل رحلة محددة معتمدة على `slug` أو `public_code`.
-**Method:** `GET`
-**Response 200 (Success):**
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "slug": "dahab-adventure",
-    "public_code": "TP-0001-DAHAB",
-    "title": "Dahab 4 Days"
-  }
-}
-```
-**Response 404 (Not Found):**
-```json
-{
-  "success": false,
-  "message": "Trip not found"
-}
-```
+| الحقل المرسل من الواجهة الأمامية (camelCase) | الحقل المقابل في الـ Backend (snake_case) | نوع الحقل والتحقق (Validation) |
+| :------------------------------------------ | :--------------------------------------- | :----------------------------- |
+| `originCity`                                | `origin_city`                            | `CharField` (مطلوب)            |
+| `destinationCity`                           | `destination_city`                       | `CharField` (مطلوب)            |
+| `fullName`                                  | `leader_full_name`                       | `CharField` (يُحفظ في Customer) |
+| `phone`                                     | `leader_phone`                           | `CharField` (يُحفظ في Customer) |
+| `termsAccepted`                             | `terms_accepted`                         | `BooleanField` (يجب أن يكون True) |
+| `docsAcknowledged`                          | `docs_acknowledged`                      | `BooleanField` (مطلوب في حال وجود أطفال أو إجابة نعم للمتزوجين) |
+| `tripSlug_in`                               | `trip_slug`                              | `CharField` (اختياري)          |
+| `tripTitle_in`                              | `trip_title`                             | `CharField` (اختياري)          |
 
 ---
 
-## 2) Destinations 
+## 📌 1. قائمة الـ 14 مساراً النشطة في النظام (14 Active Production Endpoints)
 
-### GET `/api/destinations/`
-**الغرض:** عرض الوجهات السياحية المتاحة.
-**Method:** `GET`
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "code": "DHB",
-      "slug": "dahab",
-      "name": "Dahab",
-      "country": "Egypt",
-      "city": "Dahab",
-      "description": "A small town on the southeast coast of the Sinai Peninsula.",
-      "cover_image_url": "https://...",
-      "gallery_urls": [],
-      "video_urls": [],
-      "is_active": true,
-      "sort_order": 1
-    }
-  ]
-}
-```
+### 🔑 مسارات المصادقة وحماية الجلسة (JWT Authentication)
 
-### GET `/api/destinations/{slug_or_code}/`
-**الغرض:** عرض تفاصيل وجهة بعينها.
-**Method:** `GET`
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "slug": "dahab",
-    "name": "Dahab"
-  }
-}
-```
-
-### GET `/api/destinations/{slug_or_code}/activities/`
-**الغرض:** جلب جميع الأنشطة السياحية الخاصة بوجهة معينة.
-**Method:** `GET`
-**Response 200:**
-```json
-[
+#### 1. طلب الحصول على التوكين (Obtain JWT Token)
+- **المسار:** `POST /api/auth/token` أو `POST /api/auth/token/`
+- **الغرض:** تسجيل الدخول للموظفين والحصول على توكين الجلسة وتوكين التحديث.
+- **Request Payload:**
+  ```json
   {
-    "id": 1,
-    "title": "Diving at Blue Hole",
-    "slug": "diving-blue-hole",
-    "description": "Amazing diving experience",
-    "price": "1500.00",
-    "currency": "EGP",
-    "duration": "4 Hours",
-    "options": {},
-    "tags": ["diving", "water"],
-    "is_active": true,
-    "sort_order": 1,
-    "destinationCode": "DHB",
-    "destinationSlug": "dahab"
+    "username": "employee_user",
+    "password": "secure_password"
   }
-]
-```
+  ```
+- **Response 200:**
+  ```json
+  {
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+  ```
+
+#### 2. تحديث التوكين المنتهي (Refresh JWT Token)
+- **المسار:** `POST /api/auth/token/refresh` أو `POST /api/auth/token/refresh/`
+- **الغرض:** الحصول على Access Token جديد باستخدام الـ Refresh Token.
+- **Request Payload:**
+  ```json
+  {
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+  ```
+- **Response 200:**
+  ```json
+  {
+    "access": "eyJhbGciOiJIUzI1NiIsInR5..."
+  }
+  ```
 
 ---
 
-## 3) Trip Requests (Lead Capture - Website)
+### 🗺️ مسارات الرحلات والوجهات العامة (Trips & Destinations - Public)
 
-### POST `/api/trip-requests/`
-**الغرض:** تسجيل طلب حجز جديد (Lead/Trip Request) من قِبل العميل (لا يتطلب تسجيل دخول).
-**Method:** `POST`
-
-> **Note:** يدعم الـ API أيضاً الحقول القديمة (legacy camelCase) توافقاً مع واجهات سابقة، لكن العقد الأساسي والمعتمد هو **snake_case**.
-
-**Request (JSON) - Canonical Format:**
-```json
-{
-  "trip_slug": "dahab-adventure",
-  "trip_title": "Dahab 4 Days",
-  "origin_city": "Cairo",
-  "destination_city": "Dahab",
-  "depart_date": "2026-07-01",
-  "return_date": "2026-07-04",
-  "adults_count": 2,
-  "children_count": 1,
-  "companions_mode": "family",
-  "note": "Looking for sea view.",
-  "couples_answer": "NO",
-  "terms_accepted": true,
-  "docs_acknowledged": true,
-  "leader_full_name": "Ahmed Mohamed",
-  "leader_phone": "01012345678",
-  "leader_whatsapp": "01012345678",
-  "leader_email": "ahmed@example.com",
-  "travelers": [
-    { "name": "Traveler 2", "age": 30 }
-  ],
-  "children_details": [
-    { "age": 5 }
-  ]
-}
-```
-
-**Validation Rules:**
-- `origin_city` & `destination_city`: Required.
-- `terms_accepted`: Required, must be `true`.
-- `docs_acknowledged`: Required if there are children (`children_count > 0` or `children_details` provided) OR `couples_answer` = `YES`.
-- `travelers` / `children_details`: يتم فلترتها بشدة، يجب أن تكون قائمة الكائنات `(List of dicts)` لمنع حقن السلاسل النصية التالفة.
-
-**Response 201 (Created):**
-```json
-{
-  "trip_slug": "dahab-adventure",
-  "trip_title": "Dahab 4 Days",
-  "origin_city": "Cairo",
-  "destination_city": "Dahab",
-  "terms_accepted": true,
-  "docs_acknowledged": true,
-  "leader_full_name": "Ahmed Mohamed",
-  "leader_phone": "01012345678"
-}
-```
-
----
-
-## 4) CRM (Protected Endpoints)
-
-> **Authorization:** يتطلب تسجيل الدخول وأن يكون المستخدم من ضمن مستخدمي الـ CRM.
-
-### GET `/api/crm/trip-requests/`
-**الغرض:** استعلام واسترجاع كافة طلبات الحجز (للوحة تحكم CRM) مع دعم البحث والترتيب والفلترة.
-**Query Params المتاحة:**
-- `status`
-- `priority`
-- `assigned_to`
-- `q`: بحث شامل (Text search)
-- `ordering`
-**Response 200:**
-```json
-{
-  "count": 50,
-  "next": "http://...",
-  "previous": null,
-  "results": [
+#### 3. جلب قائمة الرحلات النشطة (List Trips)
+- **المسار:** `GET /api/trips` أو `GET /api/trips/`
+- **الغرض:** جلب كل عروض الرحلات الجاهزة والقوالب المتاحة (Templates/Packages).
+- **Response 200:**
+  ```json
+  [
     {
-      "id": 1,
-      "created_at": "2026-03-14T12:00:00Z",
-      "updated_at": "2026-03-14T12:00:00Z",
-      "trip_code": "TP-0001-CAI-R001-P01-L-0000001",
-      "trip_public_code": "TP-0001-CAI",
-      "trip_slug": "cairo-trip",
-      "trip_title": "Cairo Trip",
-      "reservation_r": 1,
-      "traveler_p": 1,
-      "is_leader": true,
-      "leader_full_name": "Ahmed Mohamed",
-      "leader_phone": "01012345678",
-      "origin_city": "Alexandria",
-      "destination_city": "Cairo",
-      "status": "NEW",
-      "priority": "MEDIUM",
-      "reservation_code_internal": "TP-0001-CAI-R001-P01-L-0000001",
-      "lead_code": "L-0000001"
+      "id": 7,
+      "slug": "siwa-oasis-magic",
+      "public_code": "ST-0000007-SIWA",
+      "name": "Siwa Magic Stay",
+      "type": "STAY",
+      "priceFrom": 3500,
+      "priceTo": 5000,
+      "currency": "EGP",
+      "durationNights": 3
     }
   ]
-}
-```
+  ```
 
-### GET `/api/crm/trip-requests/{id}/`
-**الغرض:** تفاصيل طلب محدد لـ CRM، متضمنةً الملاحظات (`notes`).
-**Response 200:** كائن `TripRequest` متكامل يحتوي على تفاصيل Lead والـ CRM statuses والـ `notes` التابعة له.
+#### 4. جلب تفاصيل رحلة معينة (Retrieve Trip Details)
+- **المسار:** `GET /api/trips/<slug:identifier>` أو `GET /api/trips/<slug:identifier>/`
+- **الغرض:** جلب تفاصيل رحلة كاملة باستخدام الـ `slug` أو الـ `public_code`.
+- **Response 200:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "id": 7,
+      "slug": "siwa-oasis-magic",
+      "public_code": "ST-0000007-SIWA",
+      "name": "Siwa Magic Stay",
+      "description": "Full details...",
+      "highlights": ["Salt Lakes", "Cleopatra Bath"]
+    }
+  }
+  ```
 
-### PATCH `/api/crm/trip-requests/{id}/`
-**الغرض:** تحديث حالة الطلب من قِبل موظف CRM (status, priority, assigned_to).
-**Request PATCH (JSON):**
-```json
-{
-  "status": "CONTACTED",
-  "priority": "HIGH",
-  "assigned_to": 2,
-  "next_followup_at": "2026-03-20T10:00:00Z"
-}
-```
+#### 5. جلب قائمة الوجهات النشطة (List Destinations)
+- **المسار:** `GET /api/destinations` أو `GET /api/destinations/`
+- **Response 200:**
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "id": 1,
+        "code": "SIWA",
+        "slug": "siwa",
+        "name": "Siwa Oasis",
+        "cover_image_url": "https://..."
+      }
+    ]
+  }
+  ```
 
-### GET / POST `/api/crm/trip-requests/{id}/notes/`
-**الغرض:** استرجاع وإضافة الملاحظات الخاصة بالرقم (Notes / Emails / Calls).
-**Request POST (JSON):**
-```json
-{
-  "kind": "CALL",
-  "body": "Customer was extremely interested, will call back on Tuesday."
-}
-```
-**Response 201:**
-```json
-{
-  "id": 15,
-  "kind": "CALL",
-  "body": "Customer was extremely interested...",
-  "created_by": 2,
-  "created_at": "2026-03-14T10:00:00Z"
-}
-```
+#### 6. جلب تفاصيل وجهة معينة (Retrieve Destination Details)
+- **المسار:** `GET /api/destinations/<slug:slug_or_code>` أو `GET /api/destinations/<slug:slug_or_code>/`
+- **Response 200:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "id": 1,
+      "code": "SIWA",
+      "slug": "siwa",
+      "name": "Siwa Oasis",
+      "description": "Details..."
+    }
+  }
+  ```
+
+#### 7. جلب الأنشطة الخاصة بوجهة (Retrieve Destination Activities)
+- **المسار:** `GET /api/destinations/<slug:slug_or_code>/activities` أو `GET /api/destinations/<slug:slug_or_code>/activities/`
+- **Response 200:**
+  ```json
+  [
+    {
+      "id": 12,
+      "title": "4x4 Desert Safari",
+      "slug": "4x4-desert-safari",
+      "price": 800,
+      "currency": "EGP",
+      "duration_label": "Half-day"
+    }
+  ]
+  ```
+
+#### 8. طلب رحلة مخصصة بالطريقة القديمة (Legacy Custom Trip Request)
+- **المسار:** `POST /api/custom-trip` أو `POST /api/custom-trip/`
+- **الغرض:** واجهة خلفية متوافقة لدعم النماذج القديمة، تستقبل الـ payload وتحوله لـ TripRequest.
+- **Request Payload:** يدعم الصيغتين (camelCase و snake_case).
+- **Response 201:**
+  ```json
+  {
+    "success": true,
+    "message": "Custom trip request received.",
+    "data": { "id": 45, "trip_slug": "..." }
+  }
+  ```
 
 ---
 
-## 5) Error Format (Standard)
-يتم إرجاع الأخطاء (مثل فقدان الحقول أو أنواع البيانات الخاطئة) بطريقة تسّهل على `Frontend` قراءتها وعرضها من خلال مفاتيح (keys) مطابقة للحقول، كالمثال التالي الخاص بطلب 400 Bad Request:
+### 📝 مسارات طلبات العملاء العامة (Trip Requests - Public)
+
+#### 9. تسجيل طلب حجز جديد (Create Trip Request)
+- **المسار:** `POST /api/trip-requests` أو `POST /api/trip-requests/`
+- **الغرض:** تسجيل طلب العميل ومرافقيه، مع حفظ وحجب الهوية الشخصية تلقائياً للمستندات المطلوبة.
+- **Request Payload (Canonical):**
+  ```json
+  {
+    "trip_slug": "siwa-oasis-magic",
+    "trip_title": "Siwa Magic Stay",
+    "origin_city": "Cairo",
+    "destination_city": "Siwa",
+    "depart_date": "2026-10-15",
+    "return_date": "2026-10-18",
+    "adults_count": 2,
+    "children_count": 0,
+    "terms_accepted": true,
+    "leader_full_name": "Ziad Alhalwany",
+    "leader_phone": "01012345678",
+    "leader_whatsapp": "01012345678",
+    "leader_email": "ziad@example.com",
+    "leader_identity_type": "NATIONAL_ID",
+    "leader_identity_number": "29901011234567"
+  }
+  ```
+- **Response 201:** يعود ببيانات الحجز المنشأ.
+
+#### 10. توليد أكواد الحجز القديمة للتتبع (Generate Trip Code - Legacy)
+- **المسار:** `GET /api/trip-requests/generate-code` أو `GET /api/trip-requests/generate-code/`
+- **Response 200:**
+  ```json
+  {
+    "trip_code": "TP-ABC123-XYZ8"
+  }
+  ```
+
+---
+
+### 💼 مسارات لوحة تحكم الـ CRM المحمية (Protected CRM Endpoints - Staff Only)
+> تتطلب توكيد JWT صالح (`IsAuthenticated`) وأن يكون الحساب تابع لفريق خدمة العملاء (`IsCRMUser`).
+
+#### 11. جلب وتصفية طلبات الحجز (List CRM Trip Requests)
+- **المسار:** `GET /api/crm/trip-requests` أو `GET /api/crm/trip-requests/`
+- **معاملات التصفية والبحث (Query Params):**
+  - `status`: NEW, CONTACTED, etc.
+  - `priority`: LOW, MEDIUM, HIGH.
+  - `q`: بحث نصي في الأسماء، الأكواد، الهواتف، والوجهات.
+  - `ordering`: الترتيب (`-created_at`, `priority`).
+- **Response 200:** قائمة بـ TripRequests متضمنةً `reservation_code_internal` و `lead_code`.
+
+#### 12. جلب تفاصيل طلب حجز محدد (Retrieve CRM Trip Request Detail)
+- **المسار:** `GET /api/crm/trip-requests/<int:pk>` أو `GET /api/crm/trip-requests/<int:pk>/`
+- **Response 200:** كائن تفصيلي متكامل يحتوي على بيانات العميل المؤمنة ومرافقيه والملاحظات.
+
+#### 13. تحديث حالة وتفاصيل طلب حجز (PATCH CRM Trip Request)
+- **المسار:** `PATCH /api/crm/trip-requests/<int:pk>` أو `PATCH /api/crm/trip-requests/<int:pk>/`
+- **Request Payload:**
+  ```json
+  {
+    "status": "QUALIFIED",
+    "priority": "HIGH",
+    "assigned_to": 3
+  }
+  ```
+- **Response 200:** البيانات المحدثة للطلب.
+
+#### 14. جلب وإنشاء ملاحظات تواصل العملاء (List/Create CRM Trip Request Notes)
+- **المسار:** `GET` و `POST` على `/api/crm/trip-requests/<int:pk>/notes` أو `/api/crm/trip-requests/<int:pk>/notes/`
+- **في حالة الـ GET:** ترجع مصفوفة بالملاحظات المسجلة.
+- **Request Payload (POST):**
+  ```json
+  {
+    "kind": "CALL",
+    "body": "Ziad confirmed his travel plan on Tuesday morning."
+  }
+  ```
+- **Response 201:** الملاحظة المنشأة في قاعدة البيانات.
+
+---
+
+### 🏨 مسارات إدارة وحدات الإقامة وتحديثات الإتاحة (Sprint 2: OTA & Extranet Endpoints)
+
+#### 15. الاستعلام عن إتاحة غرف الفندق (Get Property Availability)
+- **المسار:** `GET /api/properties/{id}/availability/`
+- **الغرض:** الحصول على سجل إتاحة الغرف والأسعار لشهر وسنة حددين لوحدة إقامة معينة.
+- **معاملات الاستعلام (Query Parameters):**
+  - `month` (رقم صحيح، 1-12) - الشهر المطلوب.
+  - `year` (رقم صحيح، e.g. 2026) - السنة المطلوبة.
+- **Response 200 (Success):**
+  ```json
+  [
+    {
+      "date": "2026-06-01",
+      "roomTypeId": 3,
+      "ratePlanId": 5,
+      "price": 2500.00,
+      "allocation": 5,
+      "isAvailable": true
+    }
+  ]
+  ```
+
+#### 16. التحديث الجماعي لإتاحة وأسعار الغرف (Bulk Update Property Availability)
+- **المسار:** `POST /api/properties/{id}/availability/bulk-update/`
+- **الغرض:** تحديث جماعي لأسعار وتخصيصات الغرف في فترة محددة.
+- **Request Payload (dict):**
+  - `roomTypeId` (int): معرّف نوع الغرفة.
+  - `ratePlan` (string): خطة السعر المعتمدة (مثل RO, BB, HB, FB, AI).
+  - `price` (decimal/float): سعر الغرفة لليلة.
+  - `allocation` (int): عدد الغرف المتاحة.
+  - `startDate` (date, YYYY-MM-DD): تاريخ بداية الفترة للتحديث.
+  - `endDate` (date, YYYY-MM-DD): تاريخ نهاية الفترة للتحديث.
+- **Response 200:**
+  ```json
+  {
+    "success": true,
+    "message": "Bulk availability update applied successfully."
+  }
+  ```
+
+#### 17. محرك البحث المجمع لأسعار الإقامة (Property Aggregator Search)
+- **المسار:** `GET /api/properties/search/`
+- **الغرض:** البحث والمقارنة لأسعار وتوافر الغرف مع تطبيق خوارزمية الربح الرباعية (4-Layer Markup Pipeline) وحجب الموردين (Identity Masking).
+- **Query Parameters:**
+  - `accommodation_id` (int): معرّف وحدة الإقامة.
+  - `check_in` (date): تاريخ الدخول.
+  - `check_out` (date): تاريخ الخروج.
+- **Response 200 (Success - camelCase keys after interceptor conversion):**
+  ```json
+  [
+    {
+      "roomTypeId": 1,
+      "roomTypeName": "Deluxe Room",
+      "ratePlanId": 2,
+      "boardType": "BB",
+      "boardTypeDisplay": "Bed & Breakfast",
+      "displayTag": "Special Travelophilia Rate",
+      "totalStayPrice": 12000.00,
+      "avgPricePerNight": 4000.00,
+      "currency": "EGP",
+      "nights": 3,
+      "dailyBreakdown": [
+        {
+          "date": "2026-06-01",
+          "pricePerNight": 4000.00,
+          "roomsAvailable": 5
+        }
+      ]
+    }
+  ]
+  ```
+- **Response 200 (No Inventory):**
+  ```json
+  {
+    "status": "UNAVAILABLE_NOT_SET"
+  }
+  ```
+
+#### 18. التسجيل في قائمة الانتظار (Join Waitlist Queue)
+- **المسار:** `POST /api/waitlist/`
+- **الغرض:** حجز مكان على قائمة الانتظار لتواريخ غير نشطة تسعيرياً أو عند نفاد الغرف.
+- **Request Payload (dict):**
+  - `accommodationId` (int): معرّف وحدة الإقامة.
+  - `roomTypeId` (int): معرّف نوع الغرفة.
+  - `requestedDate` (date, YYYY-MM-DD): التاريخ المطلوب.
+  - `userEmail` (email): البريد الإلكتروني للمستخدم للطلب.
+- **Response 201 (Created):**
+  ```json
+  {
+    "id": 8,
+    "accommodationId": 2,
+    "roomTypeId": 1,
+    "requestedDate": "2026-06-15",
+    "userEmail": "customer@example.com",
+    "status": "PENDING",
+    "createdAt": "2026-06-07T12:00:00Z"
+  }
+  ```
+
+---
+
+## ⚠️ 2. هيكلية استجابة الأخطاء الموحدة (Standardized Error Responses)
+
+في حال حدوث أخطاء تحقق (Validation Errors), يعود الـ Backend بكود 400 ومصفوفة بأسباب الأخطاء مطابقة للمفاتيح:
 ```json
 {
   "terms_accepted": [
@@ -298,11 +365,8 @@
   ],
   "docs_acknowledged": [
     "This field is required."
-  ],
-  "children_details": [
-    "Must be a list of objects."
   ]
 }
 ```
+
 </div>
-```
