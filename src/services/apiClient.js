@@ -2,6 +2,7 @@
 import axios from "axios";
 import authStorage from "./authStorage";
 import { mapTripRequestPayload } from "../utils/tripRequestMapper";
+import { toSnakeDeep, toCamelDeep } from "../utils/caseConverter";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
@@ -10,19 +11,95 @@ export const api = axios.create({
   timeout: 25000,
 });
 
-/** Attach token if exists (بدون ما نفرض auth على كل حاجة) */
-api.interceptors.request.use((config) => {
-  try {
-    const token = authStorage?.getAccessToken?.();
-    if (token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
+/** Attach token and handle snake_case request mapping */
+api.interceptors.request.use(
+  (config) => {
+    try {
+      const token = authStorage?.getAccessToken?.();
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch {
+      // ignore token errors
     }
-  } catch {
-    // ignore token errors
+
+    // Convert payload/params to snake_case before sending
+    if (config.data) {
+      config.data = toSnakeDeep(config.data);
+    }
+    if (config.params) {
+      config.params = toSnakeDeep(config.params);
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+/** Intercept responses for camelCase conversion and JWT refresh */
+let refreshInFlight = null;
+
+api.interceptors.response.use(
+  (response) => {
+    if (response.data) {
+      response.data = toCamelDeep(response.data);
+    }
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.data) {
+      error.response.data = toCamelDeep(error.response.data);
+    }
+
+    // Attempt token refresh on 401
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      const refresh = authStorage?.getRefreshToken?.();
+      if (!refresh) {
+        authStorage?.clear?.();
+        return Promise.reject(error);
+      }
+
+      if (!refreshInFlight) {
+        refreshInFlight = axios
+          .post(`${API_BASE}/token/refresh/`, { refresh })
+          .then((res) => {
+            const data = toCamelDeep(res.data);
+            const newAccess = data.access;
+            const newRefresh = data.refresh || refresh;
+
+            if (newAccess) {
+              authStorage?.setAccessToken?.(newAccess);
+              authStorage?.setRefreshToken?.(newRefresh);
+              return newAccess;
+            }
+            throw new Error("No access token in refresh response");
+          })
+          .catch((refreshErr) => {
+            authStorage?.clear?.();
+            throw refreshErr;
+          })
+          .finally(() => {
+            refreshInFlight = null;
+          });
+      }
+
+      try {
+        const newAccessToken = await refreshInFlight;
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 function unwrap(data) {
   // يدعم شكل: { success, message, data }
