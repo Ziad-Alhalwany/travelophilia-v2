@@ -6,7 +6,11 @@ import CustomizeYourTripPage from "./pages/CustomizeYourTripPage";
 import TripReservationPage from "./pages/TripReservationPage";
 import AfterSubmitPage from "./pages/AfterSubmitPage";
 import CRMLoginPage from "./pages/CRMLoginPage";
-import CRMLeadsPage from "./pages/CRMLeadsPage"; 
+import CRMLeadsPage from "./pages/CRMLeadsPage";
+
+// TP-OTA-FE-EXTRANET-003: B2B Extranet routes (Sprint 2 - Ticket 3)
+import InventoryDashboard from "./pages/partners/InventoryDashboard";
+import MarkupRulesManager from "./pages/admin/MarkupRulesManager";
 
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer"; 
@@ -35,6 +39,10 @@ function App() {
           <Route path="/crm" element={<Navigate to="/crm/leads" replace />} />
           <Route path="/crm/login" element={<CRMLoginPage />} />
           <Route path="/crm/leads" element={<CRMLeadsPage />} />
+
+          {/* TP-OTA-FE-EXTRANET-003: B2B Extranet routes */}
+          <Route path="/partners/inventory" element={<InventoryDashboard />} />
+          <Route path="/admin/markup-rules" element={<MarkupRulesManager />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
