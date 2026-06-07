@@ -1,0 +1,17 @@
+﻿ M .gitignore
+ M README.md
+ M SECURITY.md
+ M src/pages/CustomizeYourTripPage.jsx
+ M src/pages/TripDetailsPage.jsx
+?? docs/analytics/
+?? docs/api.md
+?? docs/changelog.md
+?? docs/crm/
+?? docs/finance/
+?? docs/marketing/
+?? docs/ops/
+?? docs/overview.md
+?? docs/planning/
+?? docs/pricing/
+?? docs/product/
+?? docs/tasks.md
