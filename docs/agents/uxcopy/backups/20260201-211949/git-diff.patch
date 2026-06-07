@@ -1,0 +1,122 @@
+﻿diff --git a/.gitignore b/.gitignore
+index 9bd3281..205df6a 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -53,4 +53,11 @@ media/
+ .env
+ .env.*
+ venv/
+-.venv/
+\ No newline at end of file
++.venv/
++
++# Agent auto-exported reports (local runs)
++docs/agents/**/reports/_runs/
++docs/agents/**/reviews/_runs/
++
++# Shared agents reports (junction / operational only)
++docs/agents/
+diff --git a/README.md b/README.md
+index e69de29..70fb391 100644
+--- a/README.md
++++ b/README.md
+@@ -0,0 +1,46 @@
++<div dir="rtl">
++
++# Travelophilia v2
++
++> "╪Ñ┘å╪¬ ┘à╪┤ ┘ä┘ê╪¡╪»┘âΓÇª ╪Ñ╪¡┘å╪º ╪¿┘å╪¿┘å┘è ╪¬╪¼╪▒╪¿╪⌐ ┘ê┘å╪¬╪º╪¿╪╣┘ç╪º╪î ┘ê┘â┘ä ╪«╪╖┘ê╪⌐ ┘ê╪º╪╢╪¡╪⌐."
++
++## 1) Tech Stack
++- React (Vite)
++- Django (DRF)
++- PostgreSQL
++
++## 2) ╪¬╪┤╪║┘è┘ä ╪º┘ä┘à╪┤╪▒┘ê╪╣ ┘à╪¡┘ä┘è┘ï╪º (Windows)
++
++### Frontend
++┘à┘å ╪¼╪░╪▒ ╪º┘ä┘à╪┤╪▒┘ê╪╣:
++- `npm install`
++- `npm run dev`
++
++### Backend (Django)
++╪º╪»╪«┘ä ┘à╪│╪º╪▒ ╪º┘ä╪¿╪º┘â (╪╣╪»┘æ┘ä┘ç ┘ä┘ê ┘à╪«╪¬┘ä┘ü ╪╣┘å╪»┘â):
++- `cd backend/django_api`
++
++╪½┘à:
++- `python -m venv .venv`
++- `.venv\\Scripts\\activate`
++- `pip install -r requirements.txt`
++- `python manage.py migrate`
++- `python manage.py runserver`
++
++## 3) Environment
++- ╪º┘å╪│╪« `.env.example` ╪Ñ┘ä┘ë `.env` (┘ä┘ê ┘à╪╖┘ä┘ê╪¿)
++- ┘à┘à┘å┘ê╪╣ ╪▒┘ü╪╣ `.env` ╪º┘ä╪¡┘é┘è┘é┘è ╪╣┘ä┘ë git ╪ú┘ê GitHub
++
++## 4) Docs
++- `docs/overview.md` ΓÇö ╪╡┘ê╪▒╪⌐ ┘â╪¿┘è╪▒╪⌐ ┘ä┘ä┘à╪┤╪▒┘ê╪╣
++- `docs/api.md` ΓÇö ╪╣┘é╪» ╪º┘ä┘ÇAPI
++- `docs/tasks.md` ΓÇö ┘ä┘ê╪¡╪⌐ ╪º┘ä┘à┘ç╪º┘à
++- `docs/product/` ΓÇö UX & Product
++- `docs/crm/` + `docs/ops/` ΓÇö ╪¬╪┤╪║┘è┘ä ┘ü╪╣┘ä┘è
++
++## 5) Git Workflow (┘à╪«╪¬╪╡╪▒)
++- Agents ┘è╪╣┘à┘ä┘ê╪º ╪╣┘ä┘ë ┘ü╪▒┘ê╪╣┘ç┘à ┘ü┘é╪╖: `agent/*`
++- ╪º┘ä╪»┘à╪¼ ┘ä┘ä╪¬╪¼╪▒╪¿╪⌐: `owner/integration`
++- ╪º┘ä┘ÇPush ┘ê╪º┘ä┘ÇPR ┘ê╪º┘ä┘ÇMerge ╪╣┘ä┘ë GitHub: ╪▓┘è╪º╪» ┘ü┘é╪╖
++
++</div>
+diff --git a/SECURITY.md b/SECURITY.md
+index 034e848..5902608 100644
+--- a/SECURITY.md
++++ b/SECURITY.md
+@@ -1,21 +1,33 @@
+-# Security Policy
++<div dir="rtl">
+ 
+-## Supported Versions
++# Security ΓÇö Travelophilia
+ 
+-Use this section to tell people about which versions of your project are
+-currently being supported with security updates.
++## 1) Secrets Management
++- ┘à┘à┘å┘ê╪╣ ╪¬╪«╪▓┘è┘å secrets ┘ü┘è git:
++  - `.env`
++  - private keys
++  - tokens
++- ╪º╪│╪¬╪«╪»┘à `.env.example` ┘ü┘é╪╖.
+ 
+-| Version | Supported          |
+-| ------- | ------------------ |
+-| 5.1.x   | :white_check_mark: |
+-| 5.0.x   | :x:                |
+-| 4.0.x   | :white_check_mark: |
+-| < 4.0   | :x:                |
++## 2) Access Rules
++- ┘ä╪º Push/PR/Merge ╪╣┘ä┘ë GitHub ╪¿┘ê╪º╪│╪╖╪⌐ Agents
++- ╪º┘ä╪╣┘à┘ä ╪╣┘ä┘ë main ┘à┘à┘å┘ê╪╣
+ 
+-## Reporting a Vulnerability
++## 3) Web Security Baseline
++- ╪¬┘ü╪╣┘è┘ä ╪¡┘à╪º┘è╪⌐ CSRF (┘ä┘ê ┘ü┘è sessions)
++- CORS ┘à╪╢╪¿┘ê╪╖ (domains ┘à╪¡╪»╪»╪⌐)
++- Validation ┘ü┘è Backend ┘ç┘ê ╪º┘ä╪¡┘â┘à ╪º┘ä┘å┘ç╪º╪ª┘è
++- Logging ┘ä┘ä╪ú╪«╪╖╪º╪í ╪º┘ä┘à┘ç┘à╪⌐ ╪¿╪»┘ê┘å ╪¿┘è╪º┘å╪º╪¬ ╪¡╪│╪º╪│╪⌐
+ 
+-Use this section to tell people how to report a vulnerability.
++## 4) Data Privacy
++- ╪ú┘é┘ä ┘é╪»╪▒ ┘à┘å ╪º┘ä╪¿┘è╪º┘å╪º╪¬
++- ╪▒┘é┘à ┘ê╪º╪¬╪│╪º╪¿/╪º╪│┘à: ╪¬╪╣╪º┘à┘ä ┘â┘ÇPII
++- ┘à┘à┘å┘ê╪╣ ╪Ñ╪▒╪│╪º┘ä ╪¿┘è╪º┘å╪º╪¬ ╪º┘ä╪╣┘à┘è┘ä ┘ü┘è logs ╪ú┘ê screenshots ╪╣╪º┘à╪⌐
+ 
+-Tell them where to go, how often they can expect to get an update on a
+-reported vulnerability, what to expect if the vulnerability is accepted or
+-declined, etc.
++## 5) Responsible Disclosure
++┘ä┘ê ╪º┘â╪¬╪┤┘ü╪¬ ╪½╪║╪▒╪⌐:
++- ┘ê╪½┘æ┘é┘ç╪º ╪»╪º╪«┘ä┘è┘ï╪º
++- ┘ä╪º ╪¬┘å╪┤╪▒┘ç╪º
++- ╪º╪▒┘ü╪╣ ╪¬┘é╪▒┘è╪▒ ┘ä╪▓┘è╪º╪»/Release Agent
++
++</div>

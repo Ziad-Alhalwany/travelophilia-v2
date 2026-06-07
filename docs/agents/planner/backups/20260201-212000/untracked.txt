@@ -1,0 +1,2 @@
+﻿backend/django_api/trips/tests.py
+docs/planning/TP-READ-001-discovery.md

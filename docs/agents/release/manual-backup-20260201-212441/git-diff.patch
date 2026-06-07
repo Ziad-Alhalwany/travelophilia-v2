@@ -1,0 +1,83 @@
+﻿diff --cc .gitignore
+index 205df6a,e880669..0000000
+--- a/.gitignore
++++ b/.gitignore
+@@@ -55,9 -55,7 +55,16 @@@ media
+  venv/
+  .venv/
+  
+++<<<<<<< HEAD
+ +# Agent auto-exported reports (local runs)
+ +docs/agents/**/reports/_runs/
+ +docs/agents/**/reviews/_runs/
+ +
+ +# Shared agents reports (junction / operational only)
+ +docs/agents/
+++=======
++ # Local-only / private / noisy folders
++ docs/agents/
++ tools/
++ settings.json
+++>>>>>>> origin/main
+diff --cc docs/tasks.md
+index 1c7a318,7c64285..0000000
+--- a/docs/tasks.md
++++ b/docs/tasks.md
+@@@ -2,28 -2,31 +2,57 @@@
+  
+  # Tasks Board ΓÇö Travelophilia
+  
+++<<<<<<< HEAD
+ +> **┘à┘ä╪º╪¡╪╕╪⌐**: ┘ç╪░╪º ╪º┘ä┘à┘ä┘ü ┘ç┘ê ╪º┘ä┘à╪╡╪»╪▒ ╪º┘ä┘ê╪¡┘è╪» ┘ä╪¡╪º┘ä╪⌐ ╪º┘ä┘à┘ç╪º┘à.
+ +> **Rule**: ┘à┘à┘å┘ê╪╣ ┘å┘é┘ä ┘à┘ç┘à╪⌐ ╪Ñ┘ä┘ë **Done** ╪¿╪»┘ê┘å `Handoff Report` ╪ú┘ê `PR/Commit Reference` ┘ê╪º╪╢╪¡.
+ +
+ +| Task ID         | Description                       | Owner     | Priority | Status   | Notes             |
+ +| :-------------- | :-------------------------------- | :-------- | :------- | :------- | :---------------- |
+ +| **Backlog**     |                                   |           |          |          |                   |
+ +| TP-001          | Postgres integration (prod-ready) | BE2       | P0       | Pending  |                   |
+ +| TP-002          | Persist Custom Trip Requests      | FE2/BE1   | P1       | Pending  |                   |
+ +| TP-003          | CRM pipeline statuses + UI        | Ops/FE1   | P1       | Pending  |                   |
+ +| TP-004          | Basic analytics events plan       | Analytics | P2       | Pending  |                   |
+ +| TP-005          | Voucher generation v1             | Finance   | P2       | Pending  |                   |
+ +| TP-006          | Pricing guardrails v1             | Finance   | P1       | Pending  |                   |
+ +|                 |                                   |           |          |          |                   |
+ +| **In Progress** |                                   |           |          |          |                   |
+ +| (Empty)         | _Awaiting Sync_                   | -         | -        | -        | -                 |
+ +|                 |                                   |           |          |          |                   |
+ +| **Blocked**     |                                   |           |          |          |                   |
+ +| (Empty)         | _Awaiting Sync_                   | -         | -        | -        | -                 |
+ +|                 |                                   |           |          |          |                   |
+ +| **Done**        |                                   |           |          |          |                   |
+ +| TP-READ-001     | Discovery & Report                | Release   | P0       | **Done** | Discovery Report  |
+ +| TP-READ-002     | Infrastructure Verification       | Release   | P0       | **Done** | Locks/Identifiers |
+ +| TP-READ-003     | Governance Refinement             | Release   | P0       | **Done** | Protocol Updates  |
+++=======
++ > **┘à┘ä╪º╪¡╪╕╪⌐**: ┘ç╪░╪º ╪º┘ä┘à┘ä┘ü ┘ç┘ê ╪º┘ä┘à╪╡╪»╪▒ ╪º┘ä┘ê╪¡┘è╪» ┘ä╪¡╪º┘ä╪⌐ ╪º┘ä┘à┘ç╪º┘à.  
++ > ╪ú┘è ╪¬╪║┘è┘è╪▒ ┘è╪¼╪¿ ╪ú┘å ┘è┘â┘ê┘å ┘à╪▒╪¬╪¿╪╖┘ï╪º ╪¿┘Ç Commit/PR ╪ú┘ê Handoff ┘ê╪º╪╢╪¡ ┘ê┘è╪░┘â╪▒ ╪º┘ä┘Ç branch + commit hash ╪╣┘å╪» ╪º┘ä┘ä╪▓┘ê┘à.
++ 
++ ## Backlog
++ 
++ - TP-001: Postgres integration (prod-ready) ΓÇö BE
++ - TP-002: Persist Custom Trip Requests ΓÇö BE
++ - TP-003: CRM pipeline statuses + UI ΓÇö OpsCRM + FE
++ - TP-004: Basic analytics events plan ΓÇö Analytics
++ - TP-005: Voucher generation v1 ΓÇö Ops + BE
++ - TP-006: Pricing guardrails v1 ΓÇö Finance + BE
++ 
++ ## In Progress
++ 
++ - TP-MERGE-001: Merge owner/integration into main
++ - TP-FE-START-001: FE consume backend contract (lookup + trip request)
++ - TP-OPSCRM-SYNC-001: CRM pipeline + required fields aligned with codes
++ - TP-STATE-SYNC-001: All agents submit state sync report in \_shared
++ 
++ ## Blocked
++ 
++ - ┘ä╪º ┘è┘ê╪¼╪» ╪¡╪º┘ä┘è┘ï╪º
++ 
++ ## Done
++ 
++ - TP-BE-IMPL-001: Remove slug date-stripping + add strict lookup & concurrency tests (owner/integration: e100a77)
+++>>>>>>> origin/main
+  
+  </div>
