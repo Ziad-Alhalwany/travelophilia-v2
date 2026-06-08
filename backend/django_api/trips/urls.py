@@ -49,6 +49,6 @@ urlpatterns = [
     ),
     path("custom-trip", LegacyCustomTripView.as_view(), name="custom-trip-no-slash"),
     path("custom-trip/", LegacyCustomTripView.as_view(), name="custom-trip"),
-    path("metadata/", TripMetadataView.as_view(), name="trip-metadata"),
+    path("trips/metadata/", TripMetadataView.as_view(), name="trip-metadata"),
 ]
 
