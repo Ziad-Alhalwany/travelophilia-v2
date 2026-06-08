@@ -50,7 +50,7 @@ export default function Home() {
               We design premium, hand-crafted journeys for the modern explorer. Experience authentic cultures without compromising on luxury.
             </p>
             <div className="flex flex-wrap gap-4 mb-8">
-              <Button asChild size="lg" className="rounded-full bg-gradient-to-br from-primary to-brand-accent-strong text-primary-foreground font-bold border-none shadow-primary-btn hover:-translate-y-[1px] hover:shadow-[0_16px_36px_hsl(var(--primary)/0.55)] transition-all">
+              <Button asChild size="lg" className="rounded-full bg-gradient-to-br from-primary to-brand-accent-strong text-primary-foreground font-bold border-none shadow-primary-btn hover:-translate-y-[1px] hover:shadow-primary-btn-hover transition-all">
                 <Link to="/choose-your-trip">Explore Destinations</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full border-white/15 bg-transparent text-foreground hover:bg-white/5 hover:border-white/30 transition-all">
