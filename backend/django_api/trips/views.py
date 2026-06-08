@@ -117,3 +117,26 @@ class LegacyCustomTripView(APIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TripMetadataView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        destinations = (
+            Destination.objects.filter(is_active=True)
+            .order_by("sort_order", "name")
+            .values("code", "name")
+        )
+        trip_types = (
+            Trip.objects.filter(is_active=True)
+            .exclude(type="")
+            .values_list("type", flat=True)
+            .distinct()
+        )
+        data = {
+            "destinations": list(destinations),
+            "trip_types": sorted(list(trip_types)),
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
