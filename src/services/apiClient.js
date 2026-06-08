@@ -37,7 +37,75 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-/** Intercept responses for camelCase conversion and JWT refresh */
+// ═══════════════════════════════════════════════════════════════
+// Pluggable Global Error Handler (UI-Decoupled Pattern)
+// FE1 wires the active toast library via setGlobalErrorHandler()
+// ═══════════════════════════════════════════════════════════════
+let _globalErrorHandler = (message, details) => {
+  console.error(`[API Error] ${message}`, details);
+};
+
+/**
+ * Configure the global error handler callback.
+ * FE1 wires the active toast/notification library here once (e.g., in App.jsx).
+ * @param {(message: string, details?: object) => void} handler
+ */
+export function setGlobalErrorHandler(handler) {
+  if (typeof handler === "function") {
+    _globalErrorHandler = handler;
+  }
+}
+
+/**
+ * Parse Django REST Framework validation error dictionaries.
+ * Converts { field: [errors] } into a single human-readable string.
+ * @param {object} data - The error response data
+ * @returns {string|null} Formatted error string or null
+ */
+function parseDjangoValidationErrors(data) {
+  if (!data || typeof data !== "object" || data.detail) return null;
+  const entries = Object.entries(data);
+  if (entries.length === 0) return null;
+
+  return entries
+    .map(([field, errors]) => {
+      const msgs = Array.isArray(errors) ? errors.join(", ") : String(errors);
+      return `${field}: ${msgs}`;
+    })
+    .join("\n");
+}
+
+/**
+ * Dispatch error to the pluggable global handler based on HTTP status.
+ * Skipped entirely when config._silentError === true.
+ * @param {import('axios').AxiosError} error
+ */
+function dispatchGlobalError(error) {
+  const config = error.config;
+  if (config?._silentError) return;
+
+  const status = error.response?.status;
+  const data = error.response?.data;
+
+  if (status === 400) {
+    const parsed = parseDjangoValidationErrors(data);
+    _globalErrorHandler(
+      parsed || data?.detail || data?.message || "Validation error",
+      { status, data }
+    );
+  } else if (status === 403) {
+    _globalErrorHandler("You do not have permission for this action.", { status });
+  } else if (status === 404) {
+    _globalErrorHandler("Resource not found.", { status });
+  } else if (status >= 500) {
+    _globalErrorHandler("Server error. Please try again later.", { status });
+  } else if (!error.response && error.message !== "canceled") {
+    // Pure network disconnect — no HTTP response received
+    _globalErrorHandler("Network error. Check your connection.", {});
+  }
+}
+
+/** Intercept responses for camelCase conversion, error routing, and JWT refresh */
 let refreshInFlight = null;
 
 api.interceptors.response.use(
@@ -53,6 +121,9 @@ api.interceptors.response.use(
     if (error.response?.data) {
       error.response.data = toCamelDeep(error.response.data);
     }
+
+    // Route error to pluggable global handler (skip if _silentError)
+    dispatchGlobalError(error);
 
     // Attempt token refresh on 401
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
@@ -129,6 +200,53 @@ function normalizeSlug(slug) {
   return s;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// AbortController Request Factory — Race Condition Shield
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Creates a cancellable API call wrapper for race-condition protection.
+ * Returns { execute, abort } — components call abort() on unmount.
+ *
+ * @param {(signal: AbortSignal, ...args: any[]) => Promise} requestFn
+ * @returns {{ execute: (...args: any[]) => Promise, abort: () => void }}
+ *
+ * @example
+ * const { execute, abort } = createCancellableRequest(
+ *   (signal) => api.get('/trips/', { signal })
+ * );
+ * useEffect(() => { execute(); return abort; }, []);
+ */
+export function createCancellableRequest(requestFn) {
+  let controller = null;
+
+  const execute = async (...args) => {
+    // Abort any in-flight request before launching new one
+    if (controller) {
+      controller.abort();
+    }
+    controller = new AbortController();
+    try {
+      const result = await requestFn(controller.signal, ...args);
+      return unwrap(result.data);
+    } catch (e) {
+      if (e.name === "CanceledError" || e.message === "canceled") {
+        return undefined; // Silently swallow cancellation — no leak
+      }
+      throw new Error(formatAxiosError(e));
+    }
+  };
+
+  const abort = () => {
+    if (controller) {
+      controller.abort();
+      controller = null;
+    }
+  };
+
+  return { execute, abort };
+}
+
 /** Trips */
 export async function getTrips(params = undefined) {
   try {
@@ -201,12 +319,77 @@ export async function submitTripRequest(payload) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// B2B Extranet & OTA Meta-Search Network Bindings (Sprint 2)
+// Contract: Pre-wired — pending api.md formal update
+// ═══════════════════════════════════════════════════════════════
+
+/** Property Calendar — Fetch availability grid for a specific month */
+export async function fetchPropertyAvailability(propertyId, month, year, signal) {
+  try {
+    const res = await api.get(
+      `/properties/${encodeURIComponent(propertyId)}/availability/`,
+      { params: { month, year }, signal }
+    );
+    return unwrap(res.data);
+  } catch (e) {
+    if (e.name === "CanceledError") return undefined;
+    throw new Error(formatAxiosError(e));
+  }
+}
+
+/** Property Calendar — Bulk update inventory slots */
+export async function bulkUpdateInventory(propertyId, payload, signal) {
+  try {
+    const res = await api.post(
+      `/properties/${encodeURIComponent(propertyId)}/availability/bulk-update/`,
+      payload,
+      { signal }
+    );
+    return unwrap(res.data);
+  } catch (e) {
+    if (e.name === "CanceledError") return undefined;
+    throw new Error(formatAxiosError(e));
+  }
+}
+
+/** OTA Meta-Search — Aggregated property search results */
+export async function fetchSearchAggregator(params = {}, signal) {
+  try {
+    const res = await api.get("/properties/search/", { params, signal });
+    // Post-interceptor camelCase fields: totalStayPrice, avgPricePerNight, displayTag
+    return unwrap(res.data);
+  } catch (e) {
+    if (e.name === "CanceledError") return undefined;
+    throw new Error(formatAxiosError(e));
+  }
+}
+
+/** Waitlist Queue — Submit user interest */
+export async function submitWaitlistQueue(payload, signal) {
+  try {
+    const res = await api.post("/waitlist/", payload, { signal });
+    return unwrap(res.data);
+  } catch (e) {
+    if (e.name === "CanceledError") return undefined;
+    throw new Error(formatAxiosError(e));
+  }
+}
+
 export default {
   api,
+  setGlobalErrorHandler,
+  createCancellableRequest,
+  // Existing service functions
   getTrips,
   getTripBySlug,
   getDestinationActivities,
   submitCustomTrip,
   generateTripRequestCode,
   submitTripRequest,
+  // B2B Extranet & OTA (Sprint 2)
+  fetchPropertyAvailability,
+  bulkUpdateInventory,
+  fetchSearchAggregator,
+  submitWaitlistQueue,
 };
