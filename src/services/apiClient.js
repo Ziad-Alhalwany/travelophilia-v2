@@ -248,11 +248,26 @@ export function createCancellableRequest(requestFn) {
 }
 
 /** Trips */
-export async function getTrips(params = undefined) {
+export async function getTrips(params = undefined, signal = undefined) {
   try {
-    const res = await api.get("/trips/", params ? { params } : undefined);
+    const config = {};
+    if (params) config.params = params;
+    if (signal) config.signal = signal;
+    const res = await api.get("/trips/", config);
     return unwrap(res.data);
   } catch (e) {
+    if (e.name === "CanceledError" || e.message === "canceled") return undefined;
+    throw new Error(formatAxiosError(e));
+  }
+}
+
+export async function getTripMetadata(signal = undefined) {
+  try {
+    const config = signal ? { signal } : {};
+    const res = await api.get("/trips/metadata/", config);
+    return unwrap(res.data);
+  } catch (e) {
+    if (e.name === "CanceledError" || e.message === "canceled") return undefined;
     throw new Error(formatAxiosError(e));
   }
 }
@@ -383,6 +398,7 @@ export default {
   // Existing service functions
   getTrips,
   getTripBySlug,
+  getTripMetadata,
   getDestinationActivities,
   submitCustomTrip,
   generateTripRequestCode,
