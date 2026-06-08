@@ -1896,6 +1896,19 @@ select.input:focus {
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* ── Legacy Mappings & Hero Layout Fixes (TP-OTA-HOME-FIX-011) ── */
+  --color-accent-strong: var(--accent-strong);
+  --tracking-premium: 0.16em;
+  --text-hero: 2.6rem;
+  --leading-hero: 1.1;
+  --max-width-hero: 560px;
+  --max-width-hero-p: 90%;
+  --max-width-card-featured: 340px;
+  --height-skeleton: 380px;
+  --min-height-hero: 80vh;
+  --shadow-primary-btn: 0 14px 32px hsl(var(--primary) / 0.4);
+  --shadow-primary-btn-hover: 0 16px 36px hsl(var(--primary) / 0.55);
 }
 
 @layer base {
