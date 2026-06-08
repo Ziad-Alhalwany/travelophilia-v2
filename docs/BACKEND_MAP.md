@@ -121,6 +121,53 @@
 
 ---
 
+### 2.3 التطبيق الثالث: `properties` (محرك ومخزن أسعار وإتاحة وحدات الإقامة OTA)
+يهتم هذا التطبيق بكل ما يخص موردي الأسعار، وحدات الإقامة، غرف الفنادق، خطط الأسعار والوفرة اليومية وقائمة الانتظار وقواعد الربحية.
+
+**النماذج (Models):** (موجودة في `properties/models.py`)
+
+9. **`Supplier` (مورد الأسعار):**
+   - يمثل القنوات أو الموردين الموفرين للأسعار (Direct Hotel Owner, Partner Travel Agency, Global Wholesaler).
+   - **الحقول:** `name` (فريد)، `kind` (DIRECT, PARTNER_AGENCY, WHOLESALER)، `is_active` (مفهرس)، `created_at`.
+   - **المنطق واستراتيجيات الفهارس:** مفهرس على حقل النشاط `is_active` لتسريع التصفية المباشرة.
+
+10. **`Accommodation` (وحدات الإقامة):**
+    - يمثل المنشآت الفندقية أو غيرها (Hotel, Camp, Chalet, Hostel) المرتبطة بوجهة معينة.
+    - **الحقول:** `type` (HOTEL, CAMP, CHALET, HOSTEL - مفهرس)، `destination` (ForeignKey to Destination)، `name` (اسم المنشأة)، `is_active` (مفهرس)، `created_at`.
+    - **الفهارس:** مفهرس على `type` و `is_active` لسرعة استعلامات محرك البحث.
+
+11. **`RoomType` (أنواع الغرف):**
+    - يمثل فئات الغرف المتوفرة في وحدة الإقامة (مثل Standard, Suite, Deluxe Room).
+    - **الحقول:** `accommodation` (ForeignKey to Accommodation)، `name`، `total_physical_rooms` (إجمالي الغرف الفيزيائية)، `base_capacity` (السعة الأساسية)، `max_extra_beds` (الحد الأقصى للأسرة الإضافية).
+
+12. **`RatePlan` (خطط الأسعار):**
+    - يمثل خيارات الإقامة والوجبات المرتبطة بنوع الغرفة (Board Type: RO, BB, HB, FB, AI).
+    - **الحقول:** `room_type` (ForeignKey to RoomType)، `board_type` (مفهرس)، `extra_bed_price` (سعر السرير الإضافي).
+    - **الفهارس:** مفهرس على `board_type` للتصفية خلال جلب الحجوزات.
+
+13. **`InventoryPricing` (الأسعار والوفرة اليومية):**
+    - الجدول الأساسي لتخزين تسعير كل ليلة ووفرة الغرف لكل خطة سعرية ومورد.
+    - **الحقول:** `rate_plan` (ForeignKey to RatePlan)، `supplier` (ForeignKey to Supplier)، `date` (تاريخ الليلة - مفهرس)، `price_per_night` (السعر الأساسي لليلة)، `rooms_available` (عدد الغرف الشاغرة).
+    - **القيود والفهارس:** قيد فريد مركب `unique_together` على `("rate_plan", "date", "supplier")` كحماية رياضية ضد الحجز الزائد (Overbooking). مفهرس على الحقل `date` لتسريع عمليات التصفية الزمنية لرحلات الموردين.
+
+14. **`Waitlist` (قائمة الانتظار للتواريخ غير النشطة):**
+    - لتسجيل رغبات العملاء بالتواريخ غير النشطة تسعيرياً أو التي لا يتوفر فيها غرف شاغرة.
+    - **الحقول:** `accommodation` (ForeignKey to Accommodation)، `room_type` (ForeignKey to RoomType)، `requested_date` (تاريخ الطلب - مفهرس)، `user_email` (البريد الإلكتروني للعميل)، `status` (PENDING, NOTIFIED, CONVERTED - مفهرس)، `created_at`.
+    - **الفهارس:** مفهرس على `requested_date` و `status` لإدارة طابور الانتظار بفاعلية.
+
+15. **`GranularMarkupRule` (قواعد الأرباح الدقيقة):**
+    - لتعريف قواعد الربح المرنة ذات الأربع طبقات (4-Layer Markup Pipeline) لتعديل الأسعار ديناميكياً للفنادق أو أنواع الغرف المستهدفة.
+    - **الحقول:** `title`، `target_accommodations` (ManyToMany to Accommodation)، `target_room_types` (ManyToMany to RoomType)، `action` (INCREASE, DECREASE)، `percentage` (نسبة مئوية)، `fixed_amount` (مبلغ ثابت بالجنيه المصري)، `start_date`، `end_date`، `is_active` (مفهرس).
+    - **الفهارس:** مفهرس على حقل النشاط `is_active` لتصفية القواعد الفعالة مباشرة.
+
+**الروابط الأساسية (URLs):** (موجودة في `properties/urls.py` ومربوطة بـ `/api/`)
+- `GET /api/properties/search`: محرك البحث المجمع وتطبيق قواعد الأرباح وحجب هوية الموردين.
+- `GET /api/properties/<int:id>/availability`: الاستعلام عن الإتاحة والأسعار لشهر/سنة.
+- `POST /api/properties/<int:id>/availability/bulk-update`: التحديث الجماعي للإتاحة والأسعار.
+- `POST /api/waitlist`: التسجيل في قائمة الانتظار للتواريخ غير النشطة.
+
+---
+
 ## 📌 3. التوثيق المرجعي
 - **مسار المشروع الأساسي:** `backend/django_api/`
 - يعتمد الـ Backend على `PostgreSQL` كمخزن بيانات، و`rest_framework` للإدارة والاتصال، مع `rest_framework_simplejwt` للمصادقة وتوليد الـ Tokens.
