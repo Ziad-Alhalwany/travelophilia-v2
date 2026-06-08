@@ -117,7 +117,7 @@ export default function MarkupRulesManager() {
   useEffect(() => {
     const token = authStorage.getAccessToken();
     if (!token) {
-      navigate("/crm/login", { replace: true });
+      navigate("/partners/login", { replace: true });
     }
   }, [navigate]);
 

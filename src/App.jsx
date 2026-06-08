@@ -5,12 +5,14 @@ import ChooseYourTripPage from "./pages/ChooseYourTripPage";
 import CustomizeYourTripPage from "./pages/CustomizeYourTripPage";
 import TripReservationPage from "./pages/TripReservationPage";
 import AfterSubmitPage from "./pages/AfterSubmitPage";
-import CRMLoginPage from "./pages/CRMLoginPage";
+import CrmLoginPage from "./pages/crm/CrmLoginPage";
 import CRMLeadsPage from "./pages/CRMLeadsPage";
 
 // TP-OTA-FE-EXTRANET-003: B2B Extranet routes (Sprint 2 - Ticket 3)
 import InventoryDashboard from "./pages/partners/InventoryDashboard";
 import MarkupRulesManager from "./pages/admin/MarkupRulesManager";
+import PartnerLoginPage from "./pages/partners/PartnerLoginPage";
+import { CRMGuard, PartnerGuard } from "./middleware/authGuard";
 
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer"; 
@@ -53,14 +55,19 @@ function App() {
           <Route path="/reserve/:slug" element={<TripReservationPage />} />
           <Route path="/after-submit" element={<AfterSubmitPage />} />
           
-          {/* حلينا مشكلة الـ CRM: لو حد كتب /crm هيتحول أوتوماتيك لـ /crm/leads */}
-          <Route path="/crm" element={<Navigate to="/crm/leads" replace />} />
-          <Route path="/crm/login" element={<CRMLoginPage />} />
-          <Route path="/crm/leads" element={<CRMLeadsPage />} />
+          {/* CRM / Staff routes */}
+          <Route path="/crm/login" element={<CrmLoginPage />} />
+          <Route element={<CRMGuard />}>
+            <Route path="/crm" element={<Navigate to="/crm/leads" replace />} />
+            <Route path="/crm/leads" element={<CRMLeadsPage />} />
+          </Route>
 
-          {/* TP-OTA-FE-EXTRANET-003: B2B Extranet routes */}
-          <Route path="/partners/inventory" element={<InventoryDashboard />} />
-          <Route path="/admin/markup-rules" element={<MarkupRulesManager />} />
+          {/* Partner / B2B Extranet routes */}
+          <Route path="/partners/login" element={<PartnerLoginPage />} />
+          <Route element={<PartnerGuard />}>
+            <Route path="/partners/inventory" element={<InventoryDashboard />} />
+            <Route path="/admin/markup-rules" element={<MarkupRulesManager />} />
+          </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
