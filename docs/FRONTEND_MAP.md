@@ -86,9 +86,23 @@
 ## `/src/services`
 | File | Purpose |
 |------|---------|
-| `apiClient.js` | Axios instance + API functions: `getTrips()`, `getTripBySlug()`, `getDestinationActivities()`, `submitTripRequest()`, `submitCustomTrip()`, `generateTripRequestCode()` |
+| `apiClient.js` | Axios instance + API/service bindings: `getTrips()`, `getTripBySlug()`, `getDestinationActivities()`, `submitCustomTrip()`, `generateTripRequestCode()`, `submitTripRequest()`, `fetchPropertyAvailability()`, `bulkUpdateInventory()`, `fetchSearchAggregator()`, `submitWaitlistQueue()`, `setGlobalErrorHandler()`, `createCancellableRequest()` |
 | `authStorage.js` | JWT token storage (localStorage) |
 | `crmAuth.js` | CRM authentication service |
+
+---
+
+## `/src/hooks` — React Custom Hooks
+
+| File | Purpose |
+|------|---------|
+| `useOtaServices.js` | Custom hooks pipeline wrapping Sprint 2 OTA/Extranet services with AbortController query lifecycle management (prevents race conditions/memory leaks). |
+
+### 🔗 Hooks inside `useOtaServices.js`:
+- **`usePropertyAvailability`**: Fetches the availability calendar grid for a specific property. Wraps `fetchPropertyAvailability` (`GET /api/properties/{id}/availability/`).
+- **`useBulkInventoryUpdate`**: Handles bulk inventory and pricing updates for the Extranet grid. Wraps `bulkUpdateInventory` (`POST /api/properties/{id}/availability/bulk-update/`).
+- **`useOtaSearch`**: Wraps the aggregator search. Features race-condition cancel guards (via `createCancellableRequest`) to abort previous in-flight requests on successive calls. Wraps `fetchSearchAggregator` (`GET /api/properties/search/`).
+- **`useWaitlistSubmit`**: Submits a request to join the waitlist queue for dates without active inventory. Wraps `submitWaitlistQueue` (`POST /api/waitlist/`).
 
 ---
 
@@ -133,5 +147,3 @@
 | `vite.config.js` | Vite config — `@` alias → `./src`, dev server port 5173, API proxy to :8000 |
 | `components.json` | Shadcn config — style `new-york`, CSS vars enabled, aliases |
 | `jsconfig.json` | Path aliases for IDE |
-| `postcss.config.js` | PostCSS config |
-| `tailwind.config.js` | Tailwind v4 config (mostly handled via CSS) |

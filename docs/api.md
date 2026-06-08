@@ -254,6 +254,107 @@
 
 ---
 
+### 🏨 مسارات إدارة وحدات الإقامة وتحديثات الإتاحة (Sprint 2: OTA & Extranet Endpoints)
+
+#### 15. الاستعلام عن إتاحة غرف الفندق (Get Property Availability)
+- **المسار:** `GET /api/properties/{id}/availability/`
+- **الغرض:** الحصول على سجل إتاحة الغرف والأسعار لشهر وسنة حددين لوحدة إقامة معينة.
+- **معاملات الاستعلام (Query Parameters):**
+  - `month` (رقم صحيح، 1-12) - الشهر المطلوب.
+  - `year` (رقم صحيح، e.g. 2026) - السنة المطلوبة.
+- **Response 200 (Success):**
+  ```json
+  [
+    {
+      "date": "2026-06-01",
+      "roomTypeId": 3,
+      "ratePlanId": 5,
+      "price": 2500.00,
+      "allocation": 5,
+      "isAvailable": true
+    }
+  ]
+  ```
+
+#### 16. التحديث الجماعي لإتاحة وأسعار الغرف (Bulk Update Property Availability)
+- **المسار:** `POST /api/properties/{id}/availability/bulk-update/`
+- **الغرض:** تحديث جماعي لأسعار وتخصيصات الغرف في فترة محددة.
+- **Request Payload (dict):**
+  - `roomTypeId` (int): معرّف نوع الغرفة.
+  - `ratePlan` (string): خطة السعر المعتمدة (مثل RO, BB, HB, FB, AI).
+  - `price` (decimal/float): سعر الغرفة لليلة.
+  - `allocation` (int): عدد الغرف المتاحة.
+  - `startDate` (date, YYYY-MM-DD): تاريخ بداية الفترة للتحديث.
+  - `endDate` (date, YYYY-MM-DD): تاريخ نهاية الفترة للتحديث.
+- **Response 200:**
+  ```json
+  {
+    "success": true,
+    "message": "Bulk availability update applied successfully."
+  }
+  ```
+
+#### 17. محرك البحث المجمع لأسعار الإقامة (Property Aggregator Search)
+- **المسار:** `GET /api/properties/search/`
+- **الغرض:** البحث والمقارنة لأسعار وتوافر الغرف مع تطبيق خوارزمية الربح الرباعية (4-Layer Markup Pipeline) وحجب الموردين (Identity Masking).
+- **Query Parameters:**
+  - `accommodation_id` (int): معرّف وحدة الإقامة.
+  - `check_in` (date): تاريخ الدخول.
+  - `check_out` (date): تاريخ الخروج.
+- **Response 200 (Success - camelCase keys after interceptor conversion):**
+  ```json
+  [
+    {
+      "roomTypeId": 1,
+      "roomTypeName": "Deluxe Room",
+      "ratePlanId": 2,
+      "boardType": "BB",
+      "boardTypeDisplay": "Bed & Breakfast",
+      "displayTag": "Special Travelophilia Rate",
+      "totalStayPrice": 12000.00,
+      "avgPricePerNight": 4000.00,
+      "currency": "EGP",
+      "nights": 3,
+      "dailyBreakdown": [
+        {
+          "date": "2026-06-01",
+          "pricePerNight": 4000.00,
+          "roomsAvailable": 5
+        }
+      ]
+    }
+  ]
+  ```
+- **Response 200 (No Inventory):**
+  ```json
+  {
+    "status": "UNAVAILABLE_NOT_SET"
+  }
+  ```
+
+#### 18. التسجيل في قائمة الانتظار (Join Waitlist Queue)
+- **المسار:** `POST /api/waitlist/`
+- **الغرض:** حجز مكان على قائمة الانتظار لتواريخ غير نشطة تسعيرياً أو عند نفاد الغرف.
+- **Request Payload (dict):**
+  - `accommodationId` (int): معرّف وحدة الإقامة.
+  - `roomTypeId` (int): معرّف نوع الغرفة.
+  - `requestedDate` (date, YYYY-MM-DD): التاريخ المطلوب.
+  - `userEmail` (email): البريد الإلكتروني للمستخدم للطلب.
+- **Response 201 (Created):**
+  ```json
+  {
+    "id": 8,
+    "accommodationId": 2,
+    "roomTypeId": 1,
+    "requestedDate": "2026-06-15",
+    "userEmail": "customer@example.com",
+    "status": "PENDING",
+    "createdAt": "2026-06-07T12:00:00Z"
+  }
+  ```
+
+---
+
 ## ⚠️ 2. هيكلية استجابة الأخطاء الموحدة (Standardized Error Responses)
 
 في حال حدوث أخطاء تحقق (Validation Errors), يعود الـ Backend بكود 400 ومصفوفة بأسباب الأخطاء مطابقة للمفاتيح:

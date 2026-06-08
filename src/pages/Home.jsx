@@ -36,21 +36,21 @@ export default function Home() {
   return (
     <div className="pt-2 sm:pt-6">
       {/* Hero Section */}
-      <section className="mb-16 sm:mb-24 min-h-[80vh] flex items-center">
+      <section className="mb-16 sm:mb-24 min-h-hero flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div className="max-w-[560px]">
-            <span className="inline-block text-xs tracking-[0.16em] uppercase text-accent-strong mb-3 font-medium">
+            <div className="max-w-hero">
+            <span className="inline-block text-xs tracking-premium uppercase text-accent-strong mb-3 font-medium">
               Curated Experiences
             </span>
-            <h1 className="text-4xl sm:text-[2.6rem] leading-[1.1] mb-5 font-bold tracking-tight bg-gradient-to-r from-foreground via-primary to-[#00d8c0] bg-clip-text text-transparent">
+            <h1 className="text-4xl sm:text-hero leading-hero mb-5 font-bold tracking-tight bg-gradient-to-r from-foreground via-primary to-brand-accent-strong bg-clip-text text-transparent">
               Discover the World's Best Kept Secrets.
             </h1>
-            <p className="text-muted-foreground mb-8 text-base sm:text-lg leading-relaxed max-w-[90%]">
+            <p className="text-muted-foreground mb-8 text-base sm:text-lg leading-relaxed max-w-hero-p">
               We design premium, hand-crafted journeys for the modern explorer. Experience authentic cultures without compromising on luxury.
             </p>
             <div className="flex flex-wrap gap-4 mb-8">
-              <Button asChild size="lg" className="rounded-full bg-gradient-to-br from-primary to-[#00d8c0] text-primary-foreground font-bold border-none shadow-[0_14px_32px_hsl(var(--primary)/0.4)] hover:-translate-y-[1px] hover:shadow-[0_16px_36px_hsl(var(--primary)/0.55)] transition-all">
+              <Button asChild size="lg" className="rounded-full bg-gradient-to-br from-primary to-brand-accent-strong text-primary-foreground font-bold border-none shadow-primary-btn hover:-translate-y-[1px] hover:shadow-[0_16px_36px_hsl(var(--primary)/0.55)] transition-all">
                 <Link to="/choose-your-trip">Explore Destinations</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full border-white/15 bg-transparent text-foreground hover:bg-white/5 hover:border-white/30 transition-all">
@@ -66,7 +66,7 @@ export default function Home() {
           </div>
           
           <div className="flex justify-end lg:justify-end justify-center w-full">
-            <Card className="w-full max-w-[340px] p-6 rounded-3xl bg-card text-card-foreground border-border shadow-2xl xl:translate-x-4 relative">
+            <Card className="w-full max-w-card-featured p-6 rounded-3xl bg-card text-card-foreground border-border shadow-2xl xl:translate-x-4 relative">
               <CardHeader className="p-0 mb-3">
                 <span className="text-xs uppercase tracking-[0.14em] text-primary mb-1.5 block font-semibold">Featured</span>
                 <h3 className="text-xl font-bold">Egyptian Wonders</h3>
@@ -98,7 +98,7 @@ export default function Home() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((skeleton) => (
-              <div key={skeleton} className="h-[380px] rounded-2xl bg-secondary animate-pulse border border-border" />
+              <div key={skeleton} className="h-skeleton rounded-2xl bg-secondary animate-pulse border border-border" />
             ))}
           </div>
         ) : error ? (
