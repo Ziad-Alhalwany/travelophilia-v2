@@ -268,3 +268,185 @@ class AccommodationSearchView(APIView):
         # ── Step 9: Serialize & Return ─────────────────────────
         output_ser = SearchResultSerializer(results, many=True)
         return Response(output_ser.data)
+
+
+# ─────────────────────────────────────────────────────────────
+# 2. B2B Property Metadata & OTP Views
+# ─────────────────────────────────────────────────────────────
+from django.conf import settings
+from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from .models import Accommodation, RoomType, RatePlan
+from .serializers import OTPSendSerializer, OTPVerifySerializer, PasswordResetSerializer
+from .otp_service import OTPService
+
+User = get_user_model()
+
+
+class B2BPropertyMetadataView(APIView):
+    """
+    GET /api/properties/metadata/
+    Expose a live, protected route bound exclusively to the currently
+    authenticated vendor's profile.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not hasattr(request.user, "vendor_profile"):
+            return Response(
+                {"detail": "Authentication credentials are valid, but no vendor profile is linked to this account."},
+                status=403,
+            )
+
+        vendor = request.user.vendor_profile
+
+        # 1. Fetch properties (Accommodations) owned by this vendor
+        accommodations = Accommodation.objects.filter(vendor=vendor, is_active=True)
+
+        # 2. Get distinct room types linked to vendor's accommodations
+        room_types = (
+            RoomType.objects.filter(accommodation__in=accommodations)
+            .values_list("name", flat=True)
+            .distinct()
+        )
+
+        # 3. Get distinct board types linked to vendor's room types
+        board_types = (
+            RatePlan.objects.filter(room_type__accommodation__in=accommodations)
+            .values_list("board_type", flat=True)
+            .distinct()
+        )
+
+        # Map board type choices to B2B expected response codes/names
+        def map_board_type(code):
+            mapping = {
+                "RO": "Room Only",
+                "BB": "BB",
+                "HB": "Half Board",
+                "FB": "Full Board",
+                "AI": "All-Inclusive",
+            }
+            return mapping.get(code, code)
+
+        rate_plans = sorted(list(set(map_board_type(bt) for bt in board_types)))
+
+        response_data = {
+            "properties": [
+                {"id": acc.id, "name": acc.name} for acc in accommodations
+            ],
+            "room_types": sorted(list(set(room_types))),
+            "rate_plans": rate_plans,
+        }
+
+        return Response(response_data, status=200)
+
+
+class OTPSendView(APIView):
+    """
+    POST /api/auth/otp/send/
+    Sends OTP code and enforces rate limiting.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = OTPSendSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        portal_name = serializer.validated_data["portal_name"]
+        email = serializer.validated_data["email"]
+
+        # Check user existence
+        if not User.objects.filter(email=email).exists():
+            return Response({"detail": "User with this email does not exist."}, status=404)
+
+        result = OTPService.send_otp(portal_name, email)
+        if result["status"] == "rate_limited":
+            return Response({"detail": result["message"]}, status=429)
+
+        response_data = {"message": "OTP sent successfully."}
+        
+        # Include otp_code in response only during debug/tests for automation validation
+        if settings.DEBUG or getattr(settings, "TESTING", False):
+            response_data["otp_code"] = result["otp_code"]
+
+        return Response(response_data, status=200)
+
+
+class OTPVerifyView(APIView):
+    """
+    POST /api/auth/otp/verify/
+    Verifies OTP code and handles attempts counting.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = OTPVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        portal_name = serializer.validated_data["portal_name"]
+        email = serializer.validated_data["email"]
+        otp_code = serializer.validated_data["otp_code"]
+
+        result = OTPService.verify_otp(portal_name, email, otp_code)
+        if result["status"] == "verified":
+            return Response({"message": "OTP verified successfully."}, status=200)
+        elif result["status"] == "blocked":
+            return Response({"detail": result["message"]}, status=403)
+        else:
+            return Response({"detail": result["message"]}, status=400)
+
+
+class PasswordResetView(APIView):
+    """
+    POST /api/auth/otp/password-reset/
+    Resets the password if the OTP verification was successful or sends verification code directly.
+    Invalidates all outstanding refresh tokens to harden security.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        portal_name = serializer.validated_data["portal_name"]
+        email = serializer.validated_data["email"]
+        otp_code = serializer.validated_data.get("otp_code")
+        new_password = serializer.validated_data["new_password"]
+
+        # 1. Verification phase
+        # Check if the user has a transient verification token cached from OTPVerifyView
+        has_verified_token = OTPService.consume_verification(portal_name, email)
+        
+        if not has_verified_token:
+            # If no cached verification token, we require direct otp_code validation
+            if not otp_code:
+                return Response(
+                    {"detail": "Verification code (otp_code) is required to reset password."},
+                    status=400,
+                )
+            verify_result = OTPService.verify_otp(portal_name, email, otp_code)
+            if verify_result["status"] != "verified":
+                if verify_result["status"] == "blocked":
+                    return Response({"detail": verify_result["message"]}, status=403)
+                return Response({"detail": verify_result["message"]}, status=400)
+
+        # 2. Get User and change password
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=404)
+
+        user.set_password(new_password)
+        user.save()
+
+        # 3. Session Hardening: revoke and blacklist all outstanding tokens for this user
+        outstanding_tokens = OutstandingToken.objects.filter(user=user)
+        for token in outstanding_tokens:
+            BlacklistedToken.objects.get_or_create(token=token)
+
+        return Response(
+            {"message": "Password reset successfully. All active sessions have been revoked."},
+            status=200,
+        )
+

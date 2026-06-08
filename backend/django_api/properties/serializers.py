@@ -148,3 +148,25 @@ class SearchResultSerializer(serializers.Serializer):
         many=True,
         help_text="Day-by-day pricing array after markup pipeline.",
     )
+
+
+# ─────────────────────────────────────────────────────────────
+# 4. B2B & OTP Serializers
+# ─────────────────────────────────────────────────────────────
+class OTPSendSerializer(serializers.Serializer):
+    portal_name = serializers.CharField(max_length=100, required=True)
+    email = serializers.EmailField(required=True)
+
+
+class OTPVerifySerializer(serializers.Serializer):
+    portal_name = serializers.CharField(max_length=100, required=True)
+    email = serializers.EmailField(required=True)
+    otp_code = serializers.CharField(max_length=10, required=True)
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    portal_name = serializers.CharField(max_length=100, required=True)
+    email = serializers.EmailField(required=True)
+    otp_code = serializers.CharField(max_length=10, required=False, allow_blank=True)
+    new_password = serializers.CharField(max_length=128, required=True)
+

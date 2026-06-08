@@ -47,6 +47,30 @@ class Supplier(models.Model):
 
 
 # ─────────────────────────────────────────────────────────────
+# 1.5. VendorProfile  –  ملف تعريف المورد/التاجر (B2B Portal)
+# ─────────────────────────────────────────────────────────────
+class VendorProfile(models.Model):
+    """B2B Vendor profile linked to a system User."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vendor_profile",
+    )
+    company_name = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["company_name"]
+        verbose_name = "Vendor Profile"
+        verbose_name_plural = "Vendor Profiles"
+
+    def __str__(self):
+        return f"{self.company_name} ({self.user.username})"
+
+
+# ─────────────────────────────────────────────────────────────
 # 2. Accommodation  –  وحدة الإقامة (Hotel / Camp / Chalet …)
 # ─────────────────────────────────────────────────────────────
 class Accommodation(models.Model):
@@ -58,6 +82,14 @@ class Accommodation(models.Model):
         CHALET = "CHALET", "Chalet"
         HOSTEL = "HOSTEL", "Hostel"
 
+    vendor = models.ForeignKey(
+        VendorProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accommodations",
+        db_index=True,
+    )
     type = models.CharField(
         max_length=10,
         choices=AccommodationType.choices,
