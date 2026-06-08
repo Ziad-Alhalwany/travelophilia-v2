@@ -1,3 +1,25 @@
+/* ╔══════════════════════════════════════════════════════════════════════╗
+ * ║  TRAVELOPHILIA — Design System (CSS-First Architecture · TW v4)    ║
+ * ╠══════════════════════════════════════════════════════════════════════╣
+ * ║  STRICT PROHIBITION — Anti-Arbitrary Value Enforcement              ║
+ * ║                                                                     ║
+ * ║  Inline arbitrary utility classes are BANNED system-wide:           ║
+ * ║    ✗  bg-[#...]   text-[#...]   border-[#...]                       ║
+ * ║    ✗  w-[...px]   h-[...rem]   p-[...px]   m-[...px]               ║
+ * ║    ✗  Any bracket notation embedding raw values                     ║
+ * ║                                                                     ║
+ * ║  ALL visual properties MUST consume tokens from the @theme block.   ║
+ * ║  Use: bg-primary, text-accent-strong, rounded-lg, etc.              ║
+ * ║                                                                     ║
+ * ║  Violations will cause CI/CD lint failures and PR rejection.         ║
+ * ║  Contact: Ziad (Owner) for design token additions.                  ║
+ * ╠══════════════════════════════════════════════════════════════════════╣
+ * ║  Multi-Tenant Token Layer (v1.0)                                    ║
+ * ║  Brand tokens use: var(--tenant-<name>, <brand-default>)            ║
+ * ║  Override --tenant-* at :root for white-label deployments.          ║
+ * ╚══════════════════════════════════════════════════════════════════════╝
+ */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -1814,38 +1836,59 @@ select.input:focus {
 }
 
 @theme inline {
-  --font-sans: 'Geist Variable', sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
+  /* ── Typography ────────────────────────────────────────────────── */
+  --font-sans: var(--tenant-font-sans, 'Geist Variable', sans-serif);
+
+  /* ── Core Semantic Colors (Shadcn v4 Bridge) ──────────────────── */
   --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* ── Brand Tokens (Multi-Tenant White-Label Layer) ─────────────── */
+  /* Override --tenant-* at :root for custom branded deployments.     */
+  --color-brand-bg-main: var(--tenant-bg-main, #0b141a);
+  --color-brand-bg-card: var(--tenant-bg-card, #101b23);
+  --color-brand-bg-soft: var(--tenant-bg-soft, #121f28);
+  --color-brand-accent-soft: var(--tenant-accent-soft, rgba(26, 188, 156, 0.16));
+  --color-brand-accent-strong: var(--tenant-accent-strong, #00d8c0);
+  --color-brand-text-main: var(--tenant-text-main, #f5f7fa);
+  --color-brand-text-muted: var(--tenant-text-muted, #9ba6b2);
+  --color-brand-border-subtle: var(--tenant-border-subtle, rgba(255, 255, 255, 0.08));
+  --color-brand-error: var(--tenant-error, #ff6b81);
+
+  /* ── Chart Colors ──────────────────────────────────────────────── */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* ── Sidebar ───────────────────────────────────────────────────── */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ── Border Radius Scale ──────────────────────────────────────── */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -1853,6 +1896,19 @@ select.input:focus {
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* ── Legacy Mappings & Hero Layout Fixes (TP-OTA-HOME-FIX-011) ── */
+  --color-accent-strong: var(--accent-strong);
+  --tracking-premium: 0.16em;
+  --text-hero: 2.6rem;
+  --leading-hero: 1.1;
+  --max-width-hero: 560px;
+  --max-width-hero-p: 90%;
+  --max-width-card-featured: 340px;
+  --height-skeleton: 380px;
+  --min-height-hero: 80vh;
+  --shadow-primary-btn: 0 14px 32px hsl(var(--primary) / 0.4);
+  --shadow-primary-btn-hover: 0 16px 36px hsl(var(--primary) / 0.55);
 }
 
 @layer base {

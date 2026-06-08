@@ -7,6 +7,7 @@ from .views import (
     DestinationsListView,
     DestinationDetailView,
     DestinationActivitiesView,
+    TripMetadataView,
 )
 
 urlpatterns = [
@@ -48,4 +49,6 @@ urlpatterns = [
     ),
     path("custom-trip", LegacyCustomTripView.as_view(), name="custom-trip-no-slash"),
     path("custom-trip/", LegacyCustomTripView.as_view(), name="custom-trip"),
+    path("trips/metadata/", TripMetadataView.as_view(), name="trip-metadata"),
 ]
+
