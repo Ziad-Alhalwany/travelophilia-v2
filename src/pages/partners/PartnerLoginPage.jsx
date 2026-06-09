@@ -5,6 +5,20 @@ import { api } from "../../services/apiClient";
 import { KeyRound, Mail, Phone, ArrowRight, ArrowLeft, LogIn, Sparkles, ShieldCheck } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
+const collectClientTelemetry = () => {
+  try {
+    return {
+      screenResolution: typeof window !== "undefined" && window.screen ? `${window.screen.width}x${window.screen.height}` : "unknown",
+      viewportSize: typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : "unknown",
+      timezone: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "unknown",
+      locale: typeof navigator !== "undefined" ? (navigator.language || navigator.userLanguage || "unknown") : "unknown",
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown"
+    };
+  } catch (e) {
+    return {};
+  }
+};
+
 export default function PartnerLoginPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -13,6 +27,28 @@ export default function PartnerLoginPage() {
   const [otp, setOtp] = useState("");
   const [useOtp, setUseOtp] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const handleIdentifierChange = (e) => {
+    setIdentifier(e.target.value);
+    if (errors.username) {
+      setErrors((prev) => ({ ...prev, username: "" }));
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (errors.password) {
+      setErrors((prev) => ({ ...prev, password: "" }));
+    }
+  };
+
+  const handleOtpChange = (e) => {
+    setOtp(e.target.value);
+    if (errors.password) {
+      setErrors((prev) => ({ ...prev, password: "" }));
+    }
+  };
 
   const handleNext = (e) => {
     e.preventDefault();
@@ -32,11 +68,14 @@ export default function PartnerLoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setBusy(true);
+    setErrors({});
 
     try {
+      const telemetryData = collectClientTelemetry();
       const res = await api.post("/auth/partners/token/", {
         username: identifier.trim(),
-        password: useOtp ? otp : password,
+        password: useOtp ? otp.trim() : password,
+        telemetry: telemetryData,
       });
 
       const access = res.data?.access || res.data?.data?.access;
@@ -59,9 +98,31 @@ export default function PartnerLoginPage() {
         navigate("/partners/inventory", { replace: true });
       }, 1000);
     } catch (err) {
-      toast.error(err?.message || "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.", {
-        style: { background: "#101b23", color: "#f5f7fa" }
-      });
+      if (err.response && err.response.status === 400) {
+        const serverErrors = err.response.data || {};
+        const fieldErrors = {};
+
+        if (serverErrors.username) {
+          fieldErrors.username = Array.isArray(serverErrors.username)
+            ? serverErrors.username.join(" ")
+            : String(serverErrors.username);
+        }
+        if (serverErrors.password) {
+          fieldErrors.password = Array.isArray(serverErrors.password)
+            ? serverErrors.password.join(" ")
+            : String(serverErrors.password);
+        }
+
+        setErrors(fieldErrors);
+
+        if (fieldErrors.username && !fieldErrors.password) {
+          setStep(1);
+        }
+      } else {
+        toast.error(err?.message || "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.", {
+          style: { background: "#101b23", color: "#f5f7fa" }
+        });
+      }
     } finally {
       setBusy(false);
     }
@@ -113,11 +174,16 @@ export default function PartnerLoginPage() {
                       type="text"
                       required
                       value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
+                      onChange={handleIdentifierChange}
                       className="block w-full pl-10 pr-4 py-3 bg-[#090d12]/60 border border-white/[0.08] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00d8c0] focus:ring-1 focus:ring-[#00d8c0]/20 text-sm transition-all"
                       placeholder="partner@travelophilia.com"
                     />
                   </div>
+                  {errors.username && (
+                    <p className="mt-1.5 text-xs text-red-500 text-right font-medium animate-fadeIn">
+                      {errors.username}
+                    </p>
+                  )}
                 </div>
 
                 <button
@@ -136,7 +202,10 @@ export default function PartnerLoginPage() {
                 <div className="flex items-center justify-between mb-1">
                   <button
                     type="button"
-                    onClick={() => setUseOtp(!useOtp)}
+                    onClick={() => {
+                      setUseOtp(!useOtp);
+                      setErrors((prev) => ({ ...prev, password: "" }));
+                    }}
                     className="text-xs font-bold text-[#00d8c0] hover:underline"
                   >
                     {useOtp ? "استخدام كلمة المرور" : "تسجيل بالرمز المؤقت (OTP)"}
@@ -158,11 +227,16 @@ export default function PartnerLoginPage() {
                         type="password"
                         required
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={handlePasswordChange}
                         className="block w-full pl-10 pr-4 py-3 bg-[#090d12]/60 border border-white/[0.08] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00d8c0] focus:ring-1 focus:ring-[#00d8c0]/20 text-sm transition-all"
                         placeholder="••••••••"
                       />
                     </div>
+                    {errors.password && (
+                      <p className="mt-1.5 text-xs text-red-500 text-right font-medium animate-fadeIn">
+                        {errors.password}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div>
@@ -178,12 +252,18 @@ export default function PartnerLoginPage() {
                         type="text"
                         required
                         value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
+                        onChange={handleOtpChange}
+                        autoComplete="one-time-code"
                         className="block w-full pl-10 pr-4 py-3 bg-[#090d12]/60 border border-white/[0.08] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#00d8c0] focus:ring-1 focus:ring-[#00d8c0]/20 text-sm transition-all text-center tracking-widest font-bold"
                         placeholder="000000"
                         maxLength={6}
                       />
                     </div>
+                    {errors.password && (
+                      <p className="mt-1.5 text-xs text-red-500 text-right font-medium animate-fadeIn">
+                        {errors.password}
+                      </p>
+                    )}
                     <p className="text-[11px] text-slate-500 mt-1.5 text-right">
                       تم إرسال رمز تحقق مؤقت إلى {identifier} (افتراضي)
                     </p>

@@ -129,6 +129,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      if (!navigator.onLine) {
+        // Connection drop post-auth: maintain session availability and bypass clearing storage
+        return Promise.reject(error);
+      }
+
       const refresh = authStorage?.getRefreshToken?.();
       if (!refresh) {
         authStorage?.clear?.();
