@@ -23,9 +23,10 @@ export function CRMGuard() {
  * Checks strictly for B2B/Partner token.
  */
 export function PartnerGuard() {
-  const isPartnerAuthenticated = !!authStorage.getAccessToken();
+  const token = authStorage.getAccessToken() || "";
+  const isJwtFormatted = /^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/.test(token.trim());
 
-  if (!isPartnerAuthenticated) {
+  if (!isJwtFormatted) {
     // Isolated B2B partner redirect
     return <Navigate to="/partners/login" replace />;
   }
