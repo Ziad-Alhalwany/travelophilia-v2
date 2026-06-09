@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("trips", "0001_initial"),
+        ("trips", "0005_alter_trip_global_seq_alter_trip_internal_seq_and_more"),
     ]
 
     operations = [
