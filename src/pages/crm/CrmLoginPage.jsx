@@ -64,7 +64,10 @@ export default function CrmLoginPage() {
       const res = await fetch(TOKEN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim(), password }),
+        body: JSON.stringify({
+          username: username.trim(),
+          password: useOtp ? otp : password,
+        }),
       });
 
       const rawText = await res.text().catch(() => "");
