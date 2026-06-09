@@ -13,6 +13,8 @@ from .views import (
 urlpatterns = [
     path("trips", TripsListView.as_view(), name="trips-list-no-slash"),
     path("trips/", TripsListView.as_view(), name="trips-list"),
+    path("trips/metadata", TripMetadataView.as_view(), name="trip-metadata-no-slash"),
+    path("trips/metadata/", TripMetadataView.as_view(), name="trip-metadata"),
     # ✅ identifier ممكن يبقى slug أو public_code
     path(
         "trips/<slug:identifier>",
@@ -49,6 +51,5 @@ urlpatterns = [
     ),
     path("custom-trip", LegacyCustomTripView.as_view(), name="custom-trip-no-slash"),
     path("custom-trip/", LegacyCustomTripView.as_view(), name="custom-trip"),
-    path("trips/metadata/", TripMetadataView.as_view(), name="trip-metadata"),
 ]
 
