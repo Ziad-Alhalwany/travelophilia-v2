@@ -20,7 +20,13 @@ This file is included from ``djconfig/urls.py`` under the
 
 from django.urls import path
 
-from .views import AccommodationSearchView
+from .views import (
+    AccommodationSearchView,
+    B2BPropertyMetadataView,
+    OTPSendView,
+    OTPVerifyView,
+    PasswordResetView,
+)
 
 urlpatterns = [
     # ── Public Aggregator Search ──────────────────────────────
@@ -33,5 +39,49 @@ urlpatterns = [
         "properties/search/",
         AccommodationSearchView.as_view(),
         name="properties_search",
+    ),
+
+    # ── B2B Property Metadata ─────────────────────────────────
+    path(
+        "properties/metadata",
+        B2BPropertyMetadataView.as_view(),
+        name="properties_metadata_no_slash",
+    ),
+    path(
+        "properties/metadata/",
+        B2BPropertyMetadataView.as_view(),
+        name="properties_metadata",
+    ),
+
+    # ── Stateful OTP Engine ───────────────────────────────────
+    path(
+        "auth/otp/send",
+        OTPSendView.as_view(),
+        name="otp_send_no_slash",
+    ),
+    path(
+        "auth/otp/send/",
+        OTPSendView.as_view(),
+        name="otp_send",
+    ),
+    path(
+        "auth/otp/verify",
+        OTPVerifyView.as_view(),
+        name="otp_verify_no_slash",
+    ),
+    path(
+        "auth/otp/verify/",
+        OTPVerifyView.as_view(),
+        name="otp_verify",
+    ),
+    path(
+        "auth/otp/password-reset",
+        PasswordResetView.as_view(),
+        name="otp_password_reset_no_slash",
+    ),
+    path(
+        "auth/otp/password-reset/",
+        PasswordResetView.as_view(),
+        name="otp_password_reset",
     ),
 ]
