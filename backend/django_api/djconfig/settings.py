@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
 
     "corsheaders",
     "rest_framework",
@@ -91,20 +93,30 @@ WSGI_APPLICATION = 'djconfig.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-if DB_PASSWORD is None:
-    raise ImproperlyConfigured("The DB_PASSWORD environment variable is required but was not found.")
+TESTING = "test" in sys.argv
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "travelophilia"),
-        "USER": os.getenv("DB_USER", "travelophilia_owner"),
-        "PASSWORD": DB_PASSWORD,
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "6666"),
+if TESTING:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+    if DB_PASSWORD is None:
+        raise ImproperlyConfigured("The DB_PASSWORD environment variable is required but was not found.")
+
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME", "travelophilia"),
+            "USER": os.getenv("DB_USER", "travelophilia_owner"),
+            "PASSWORD": DB_PASSWORD,
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "6666"),
+        }
+    }
 
 from datetime import timedelta
 REST_FRAMEWORK = {
@@ -169,3 +181,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Caching Configuration using Redis Cache with LocMem fallback during tests
+if TESTING:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "transient-auth-test-cache",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1"),
+        }
+    }
+
