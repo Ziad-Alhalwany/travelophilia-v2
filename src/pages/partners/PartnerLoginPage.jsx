@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import authStorage from "../../services/authStorage";
+import { api } from "../../services/apiClient";
 import { KeyRound, Mail, Phone, ArrowRight, ArrowLeft, LogIn, Sparkles, ShieldCheck } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -32,32 +33,38 @@ export default function PartnerLoginPage() {
     e.preventDefault();
     setBusy(true);
 
-    // Mock verification delay
-    setTimeout(() => {
-      try {
-        // Mock token generation
-        const mockAccessToken = "mock_partner_access_token_" + Date.now();
-        const mockRefreshToken = "mock_partner_refresh_token_" + Date.now();
+    try {
+      const res = await api.post("/auth/partners/token/", {
+        username: identifier.trim(),
+        password: useOtp ? otp : password,
+      });
 
-        authStorage.setAccessToken(mockAccessToken);
-        authStorage.setRefreshToken(mockRefreshToken);
+      const access = res.data?.access || res.data?.data?.access;
+      const refresh = res.data?.refresh || res.data?.data?.refresh;
 
-        toast.success("تم تسجيل الدخول بنجاح! جاري التوجيه...", {
-          style: { background: "#101b23", color: "#f5f7fa", border: "1px solid rgba(0, 216, 192, 0.2)" }
-        });
-
-        // Redirect to partner dashboard
-        setTimeout(() => {
-          navigate("/partners/inventory", { replace: true });
-        }, 1000);
-      } catch (err) {
-        toast.error("فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.", {
-          style: { background: "#101b23", color: "#f5f7fa" }
-        });
-      } finally {
-        setBusy(false);
+      if (!access) {
+        throw new Error("استجابة الخادم لم تتضمن رمز الدخول (access token).");
       }
-    }, 800);
+
+      authStorage.setAccessToken(access);
+      if (refresh) {
+        authStorage.setRefreshToken(refresh);
+      }
+
+      toast.success("تم تسجيل الدخول بنجاح! جاري التوجيه...", {
+        style: { background: "#101b23", color: "#f5f7fa", border: "1px solid rgba(0, 216, 192, 0.2)" }
+      });
+
+      setTimeout(() => {
+        navigate("/partners/inventory", { replace: true });
+      }, 1000);
+    } catch (err) {
+      toast.error(err?.message || "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.", {
+        style: { background: "#101b23", color: "#f5f7fa" }
+      });
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
