@@ -26,6 +26,7 @@ from .views import (
     OTPSendView,
     OTPVerifyView,
     PasswordResetView,
+    PartnerTokenObtainView,
 )
 
 urlpatterns = [
@@ -85,3 +86,18 @@ urlpatterns = [
         name="otp_password_reset",
     ),
 ]
+
+# Separate clean routing namespaces for B2B partner auth to prevent collisions
+partner_urlpatterns = [
+    path(
+        "token",
+        PartnerTokenObtainView.as_view(),
+        name="partner_token_no_slash",
+    ),
+    path(
+        "token/",
+        PartnerTokenObtainView.as_view(),
+        name="partner_token",
+    ),
+]
+
