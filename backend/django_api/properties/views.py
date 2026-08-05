@@ -38,7 +38,15 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import GranularMarkupRule, InventoryPricing
+from .models import (
+    Accommodation,
+    GranularMarkupRule,
+    InventoryPricing,
+    RatePlan,
+    RoomType,
+    Supplier,
+    Waitlist,
+)
 from .serializers import SearchQuerySerializer, SearchResultSerializer
 
 
@@ -558,5 +566,188 @@ class PartnerTokenObtainView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+# ─────────────────────────────────────────────────────────────
+# 3. OTA Availability & Waitlist Endpoints
+# ─────────────────────────────────────────────────────────────
+class PropertyAvailabilityView(APIView):
+    """
+    GET /api/properties/<int:id>/availability/
+    Query availability and day-by-day pricing stored in InventoryPricing.
+    Supports optional query params: start_date, end_date (YYYY-MM-DD).
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, id):
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+
+        qs = (
+            InventoryPricing.objects
+            .select_related("rate_plan__room_type", "supplier")
+            .filter(rate_plan__room_type__accommodation_id=id)
+        )
+
+        if start_date:
+            qs = qs.filter(date__gte=start_date)
+        if end_date:
+            qs = qs.filter(date__lte=end_date)
+
+        qs = qs.order_by("date", "rate_plan_id")
+
+        data = [
+            {
+                "id": item.id,
+                "ratePlanId": item.rate_plan_id,
+                "roomTypeId": item.rate_plan.room_type_id if item.rate_plan else None,
+                "supplierId": item.supplier_id,
+                "supplierName": item.supplier.name if item.supplier else "",
+                "date": item.date,
+                "pricePerNight": str(item.price_per_night),
+                "roomsAvailable": item.rooms_available,
+            }
+            for item in qs
+        ]
+
+        return Response(
+            {
+                "success": True,
+                "accommodationId": id,
+                "availability": data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PropertyAvailabilityBulkUpdateView(APIView):
+    """
+    POST /api/properties/<int:id>/availability/bulk-update/
+    Bulk update or create day-level inventory and pricing (InventoryPricing) for property (id).
+    Payload: {"updates": [{"rate_plan_id": 1, "supplier_id": 1, "date": "2026-09-01", "price_per_night": 1500.00, "rooms_available": 10}]}
+             or raw list of update items.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, id):
+        if not Accommodation.objects.filter(id=id).exists():
+            return Response(
+                {"success": False, "message": f"Accommodation #{id} not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        payload = request.data
+        if isinstance(payload, dict):
+            updates = payload.get("updates", [])
+        elif isinstance(payload, list):
+            updates = payload
+        else:
+            updates = []
+
+        if not updates:
+            return Response(
+                {"success": False, "message": "No update records provided."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        updated_records = []
+        from django.db import transaction
+
+        with transaction.atomic():
+            for item in updates:
+                rate_plan_id = item.get("rate_plan_id") or item.get("ratePlanId")
+                supplier_id = item.get("supplier_id") or item.get("supplierId")
+                date_val = item.get("date")
+                price = item.get("price_per_night") or item.get("pricePerNight")
+                rooms = item.get("rooms_available") if "rooms_available" in item else item.get("roomsAvailable", 0)
+
+                if not all([rate_plan_id, supplier_id, date_val, price is not None]):
+                    continue
+
+                obj, created = InventoryPricing.objects.update_or_create(
+                    rate_plan_id=rate_plan_id,
+                    supplier_id=supplier_id,
+                    date=date_val,
+                    defaults={
+                        "price_per_night": Decimal(str(price)),
+                        "rooms_available": int(rooms),
+                    },
+                )
+                updated_records.append(obj.id)
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Successfully updated {len(updated_records)} inventory records.",
+                "updatedCount": len(updated_records),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class WaitlistCreateView(APIView):
+    """
+    POST /api/waitlist/
+    Register user request in Waitlist queue for dates without active inventory.
+    Payload: {"accommodation_id": 1, "room_type_id": 1, "requested_date": "2026-09-01", "user_email": "user@example.com"}
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        data = request.data or {}
+        accommodation_id = data.get("accommodation_id") or data.get("accommodationId")
+        room_type_id = data.get("room_type_id") or data.get("roomTypeId")
+        requested_date = data.get("requested_date") or data.get("requestedDate")
+        user_email = (data.get("user_email") or data.get("userEmail") or "").strip()
+
+        errors = {}
+        if not accommodation_id:
+            errors["accommodation_id"] = ["This field is required."]
+        if not room_type_id:
+            errors["room_type_id"] = ["This field is required."]
+        if not requested_date:
+            errors["requested_date"] = ["This field is required."]
+        if not user_email:
+            errors["user_email"] = ["This field is required."]
+
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if not Accommodation.objects.filter(id=accommodation_id).exists():
+            return Response(
+                {"accommodation_id": [f"Accommodation #{accommodation_id} does not exist."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not RoomType.objects.filter(id=room_type_id, accommodation_id=accommodation_id).exists():
+            return Response(
+                {"room_type_id": [f"RoomType #{room_type_id} does not exist for Accommodation #{accommodation_id}."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        waitlist_entry = Waitlist.objects.create(
+            accommodation_id=accommodation_id,
+            room_type_id=room_type_id,
+            requested_date=requested_date,
+            user_email=user_email,
+            status=Waitlist.Status.PENDING,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Successfully added to waitlist queue.",
+                "data": {
+                    "id": waitlist_entry.id,
+                    "accommodationId": waitlist_entry.accommodation_id,
+                    "roomTypeId": waitlist_entry.room_type_id,
+                    "requestedDate": str(waitlist_entry.requested_date),
+                    "userEmail": waitlist_entry.user_email,
+                    "status": waitlist_entry.status,
+                    "createdAt": waitlist_entry.created_at,
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
 
 

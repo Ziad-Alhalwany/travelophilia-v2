@@ -98,8 +98,10 @@ class DestinationActivitiesView(APIView):
         if not dest:
             return Response([], status=status.HTTP_200_OK)
 
-        qs = Activity.objects.filter(destination=dest, is_active=True).order_by(
-            "sort_order", "id"
+        qs = (
+            Activity.objects.select_related("destination")
+            .filter(destination=dest, is_active=True)
+            .order_by("sort_order", "id")
         )
         data = ActivitySerializer(qs, many=True).data
         return Response(data, status=status.HTTP_200_OK)
@@ -123,20 +125,17 @@ class TripMetadataView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        destinations = (
-            Destination.objects.filter(is_active=True)
-            .order_by("sort_order", "name")
-            .values("code", "name")
-        )
-        trip_types = (
-            Trip.objects.filter(is_active=True)
-            .exclude(type="")
-            .values_list("type", flat=True)
-            .distinct()
-        )
+        dest_qs = Destination.objects.filter(is_active=True).order_by("sort_order", "name")
+        destinations = list(dest_qs.values("code", "name")) if dest_qs.exists() else []
+
+        trip_qs = Trip.objects.filter(is_active=True).exclude(type="")
+        trip_types = sorted(list(trip_qs.values_list("type", flat=True).distinct())) if trip_qs.exists() else []
+
         data = {
-            "destinations": list(destinations),
-            "trip_types": sorted(list(trip_types)),
+            "destinations": destinations,
+            "categories": trip_types,
+            "trip_types": trip_types,
         }
         return Response(data, status=status.HTTP_200_OK)
+
 

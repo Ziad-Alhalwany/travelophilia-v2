@@ -27,6 +27,9 @@ from .views import (
     OTPVerifyView,
     PasswordResetView,
     PartnerTokenObtainView,
+    PropertyAvailabilityView,
+    PropertyAvailabilityBulkUpdateView,
+    WaitlistCreateView,
 )
 
 urlpatterns = [
@@ -40,6 +43,40 @@ urlpatterns = [
         "properties/search/",
         AccommodationSearchView.as_view(),
         name="properties_search",
+    ),
+
+    # ── OTA Property Availability ─────────────────────────────
+    path(
+        "properties/<int:id>/availability",
+        PropertyAvailabilityView.as_view(),
+        name="property_availability_no_slash",
+    ),
+    path(
+        "properties/<int:id>/availability/",
+        PropertyAvailabilityView.as_view(),
+        name="property_availability",
+    ),
+    path(
+        "properties/<int:id>/availability/bulk-update",
+        PropertyAvailabilityBulkUpdateView.as_view(),
+        name="property_availability_bulk_update_no_slash",
+    ),
+    path(
+        "properties/<int:id>/availability/bulk-update/",
+        PropertyAvailabilityBulkUpdateView.as_view(),
+        name="property_availability_bulk_update",
+    ),
+
+    # ── Waitlist Queue Intercept ──────────────────────────────
+    path(
+        "waitlist",
+        WaitlistCreateView.as_view(),
+        name="waitlist_create_no_slash",
+    ),
+    path(
+        "waitlist/",
+        WaitlistCreateView.as_view(),
+        name="waitlist_create",
     ),
 
     # ── B2B Property Metadata ─────────────────────────────────
