@@ -32,6 +32,7 @@ api.interceptors.request.use(
       config.params = toSnakeDeep(config.params);
     }
 
+    // Safely preserve the native AbortSignal instance by returning the intact request config reference
     return config;
   },
   (error) => Promise.reject(error)
@@ -249,10 +250,18 @@ export function createCancellableRequest(requestFn) {
 
 /** Trips */
 export async function getTrips(params = undefined, signal = undefined) {
+  let actualParams = params;
+  let actualSignal = signal;
+
+  if (params && typeof params.addEventListener === "function") {
+    actualSignal = params;
+    actualParams = arguments[1];
+  }
+
   try {
     const config = {};
-    if (params) config.params = params;
-    if (signal) config.signal = signal;
+    if (actualParams) config.params = actualParams;
+    if (actualSignal) config.signal = actualSignal;
     const res = await api.get("/trips/", config);
     return unwrap(res.data);
   } catch (e) {
@@ -341,10 +350,22 @@ export async function submitTripRequest(payload) {
 
 /** Property Calendar — Fetch availability grid for a specific month */
 export async function fetchPropertyAvailability(propertyId, month, year, signal) {
+  let actualPropertyId = propertyId;
+  let actualMonth = month;
+  let actualYear = year;
+  let actualSignal = signal;
+
+  if (propertyId && typeof propertyId.addEventListener === "function") {
+    actualSignal = propertyId;
+    actualPropertyId = month;
+    actualMonth = year;
+    actualYear = arguments[3];
+  }
+
   try {
     const res = await api.get(
-      `/properties/${encodeURIComponent(propertyId)}/availability/`,
-      { params: { month, year }, signal }
+      `/properties/${encodeURIComponent(actualPropertyId)}/availability/`,
+      { params: { month: actualMonth, year: actualYear }, signal: actualSignal }
     );
     return unwrap(res.data);
   } catch (e) {
@@ -355,11 +376,21 @@ export async function fetchPropertyAvailability(propertyId, month, year, signal)
 
 /** Property Calendar — Bulk update inventory slots */
 export async function bulkUpdateInventory(propertyId, payload, signal) {
+  let actualPropertyId = propertyId;
+  let actualPayload = payload;
+  let actualSignal = signal;
+
+  if (propertyId && typeof propertyId.addEventListener === "function") {
+    actualSignal = propertyId;
+    actualPropertyId = payload;
+    actualPayload = arguments[2];
+  }
+
   try {
     const res = await api.post(
-      `/properties/${encodeURIComponent(propertyId)}/availability/bulk-update/`,
-      payload,
-      { signal }
+      `/properties/${encodeURIComponent(actualPropertyId)}/availability/bulk-update/`,
+      actualPayload,
+      { signal: actualSignal }
     );
     return unwrap(res.data);
   } catch (e) {
@@ -370,8 +401,16 @@ export async function bulkUpdateInventory(propertyId, payload, signal) {
 
 /** OTA Meta-Search — Aggregated property search results */
 export async function fetchSearchAggregator(params = {}, signal) {
+  let actualParams = params;
+  let actualSignal = signal;
+
+  if (params && typeof params.addEventListener === "function") {
+    actualSignal = params;
+    actualParams = arguments[1] || {};
+  }
+
   try {
-    const res = await api.get("/properties/search/", { params, signal });
+    const res = await api.get("/properties/search/", { params: actualParams, signal: actualSignal });
     // Post-interceptor camelCase fields: totalStayPrice, avgPricePerNight, displayTag
     return unwrap(res.data);
   } catch (e) {
@@ -382,8 +421,16 @@ export async function fetchSearchAggregator(params = {}, signal) {
 
 /** Waitlist Queue — Submit user interest */
 export async function submitWaitlistQueue(payload, signal) {
+  let actualPayload = payload;
+  let actualSignal = signal;
+
+  if (payload && typeof payload.addEventListener === "function") {
+    actualSignal = payload;
+    actualPayload = arguments[1];
+  }
+
   try {
-    const res = await api.post("/waitlist/", payload, { signal });
+    const res = await api.post("/waitlist/", actualPayload, { signal: actualSignal });
     return unwrap(res.data);
   } catch (e) {
     if (e.name === "CanceledError") return undefined;
