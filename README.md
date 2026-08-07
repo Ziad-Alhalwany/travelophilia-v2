@@ -11,9 +11,20 @@ Travelophilia ليس مجرد "موقع لحجز الرحلات"، بل هو ن�
 
 ## 🛠️ التقنيات المستخدمة (Tech Stack)
 
-- **Frontend:** React + Vite (استخدام `camelCase`)
-- **Backend:** Django + Django REST Framework (استخدام `snake_case`)
-- **Database:** PostgreSQL
+- **الواجهة الأمامية (Frontend):**
+  - React + Vite (ترميز بروتوكولات الحقول بصيغة `camelCase`).
+  - Tailwind CSS v4 + Shadcn UI لبناء الواجهات الرسومية الداكنة وتأثيرات الـ Glassmorphism والتدرج الشعاعي الفاخر بـ `AppLayout`.
+  - ✨ Magic Companion Link & Smart Reservation: توليد رابط المرافق السحري مع أزرار النسخ والمشاركة المباشرة عبر WhatsApp.
+  - PWA (Progressive Web App) يدعم العمل غير المتصل (Offline Mode) ومقاطعات مرونة الاتصال (Connection Resilience Interceptors) التي تتتبع حالة الشبكة عبر `navigator.onLine`.
+- **الخوادم والمنطق (Backend & Logic):**
+  - Django + Django REST Framework (DRF) (ترميز الحقول في المعالجات بصيغة `snake_case`).
+  - Redis Cache لتخزين وإدارة محرك الـ OTP الموحد ومصادقة الشركاء (مع محرك فحص TCP Socket بمهلة تحقق ثانية واحدة للتراجع لـ `LocMemCache` محلياً).
+  - PostgreSQL كقاعدة بيانات معتمدة وحيدة للمشروع مع دعم تشفير وحجب الهويات الشخصية (Identity Hash).
+  - SimpleJWT للمصادقة وتوفير رموز الجلسات مع إتاحة نظام إبطال وإدراج الرموز في القائمة السوداء (Token Blacklisting) عند تغيير كلمات المرور.
+- **بوابات الدخول والمسارات (Gateways & Route Isolation):**
+  - بوابة الموظفين والـ CRM المحمية بحارس `CRMGuard` (مستندة على مفاتيح التوكن `tp_crm_access`).
+  - بوابة الشركاء وموردي B2B المحمية بحارس `PartnerGuard` (مستندة على مفاتيح التوكن `travelophilia_access_token` ومسار المصادقة المعزول `/api/auth/partners/token/` بـ namespace مستقل باسم `partners_auth`).
+
 
 ## 🤖 بنية الـ AI Agents
 

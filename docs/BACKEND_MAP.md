@@ -133,8 +133,8 @@
 
 10. **`Accommodation` (وحدات الإقامة):**
     - يمثل المنشآت الفندقية أو غيرها (Hotel, Camp, Chalet, Hostel) المرتبطة بوجهة معينة.
-    - **الحقول:** `type` (HOTEL, CAMP, CHALET, HOSTEL - مفهرس)، `destination` (ForeignKey to Destination)، `name` (اسم المنشأة)، `is_active` (مفهرس)، `created_at`.
-    - **الفهارس:** مفهرس على `type` و `is_active` لسرعة استعلامات محرك البحث.
+    - **الحقول:** `type` (HOTEL, CAMP, CHALET, HOSTEL - مفهرس)، `destination` (ForeignKey to Destination)، `vendor` (ForeignKey to VendorProfile - لعزل وتحديد ملكية المنشأة للمورد B2B)، `name` (اسم المنشأة)، `is_active` (مفهرس)، `created_at`.
+    - **الفهارس:** مفهرس على `type` و `is_active` و `vendor` لسرعة استعلامات محرك البحث وعزل بيانات الموردين.
 
 11. **`RoomType` (أنواع الغرف):**
     - يمثل فئات الغرف المتوفرة في وحدة الإقامة (مثل Standard, Suite, Deluxe Room).
@@ -160,11 +160,18 @@
     - **الحقول:** `title`، `target_accommodations` (ManyToMany to Accommodation)، `target_room_types` (ManyToMany to RoomType)، `action` (INCREASE, DECREASE)، `percentage` (نسبة مئوية)، `fixed_amount` (مبلغ ثابت بالجنيه المصري)، `start_date`، `end_date`، `is_active` (مفهرس).
     - **الفهارس:** مفهرس على حقل النشاط `is_active` لتصفية القواعد الفعالة مباشرة.
 
+16. **`VendorProfile` (ملف تعريف المورد B2B):**
+    - يربط حساب المستخدم (User) بالمنشأة الموردة (Supplier) لتمكين لوحات التحكم والأسعار المعزولة.
+    - **الحقول:** `user` (OneToOne to User)، `supplier` (ForeignKey to Supplier)، `is_active` (مفهرس).
+    - **الفهارس:** مفهرس على `user` و `is_active` للتحقق السريع أثناء عمليات تسجيل الدخول وعزل البيانات.
+
 **الروابط الأساسية (URLs):** (موجودة في `properties/urls.py` ومربوطة بـ `/api/`)
 - `GET /api/properties/search`: محرك البحث المجمع وتطبيق قواعد الأرباح وحجب هوية الموردين.
 - `GET /api/properties/<int:id>/availability`: الاستعلام عن الإتاحة والأسعار لشهر/سنة.
 - `POST /api/properties/<int:id>/availability/bulk-update`: التحديث الجماعي للإتاحة والأسعار.
 - `POST /api/waitlist`: التسجيل في قائمة الانتظار للتواريخ غير النشطة.
+- `POST /api/auth/partners/token/` (معزول تحت namespace باسم `partners_auth`): مسار مصادقة شركاء B2B الحقيقي والآمن (يستقبل `username` و `password`/`OTP` المكون من 6 أرقام).
+- `GET /api/properties/metadata/` (يتطلب `IsAuthenticated` وعزل الموردين): مسار جلب الميتاداتا لخصائص المورد (الفنادق، خطط الأسعار، أنواع الغرف) لتشغيل لوحة تحكم المورد B2B.
 
 ---
 
@@ -172,3 +179,7 @@
 - **مسار المشروع الأساسي:** `backend/django_api/`
 - يعتمد الـ Backend على `PostgreSQL` كمخزن بيانات، و`rest_framework` للإدارة والاتصال، مع `rest_framework_simplejwt` للمصادقة وتوليد الـ Tokens.
 - أي مسار تحت `/api/crm/` محمي بصلاحيات staff عبر الكلاس `IsCRMUser`.
+
+## 📌 4. نظام الأمان والمصادقة للشركاء (B2B Authentication & Token Blacklisting)
+- **عزل المسارات (Route Isolation):** تم تعريف مسارات مصادقة شركاء B2B بشكل منفصل داخل مصفوفة `partner_urlpatterns` وربطها في موجه المسارات العام كمسار معزول تحت namespace مخصص باسم `partners_auth` لمنع التداخل (Routing Collision) مع مسارات الـ CRM أو الرحلات العامة.
+- **إبطال الرموز وإبطال الجلسات (Token Blacklisting Schema):** يدعم خادم Django (عبر تفعيل `rest_framework_simplejwt.token_blacklist`) إبطال كافة رموز التحديث (Refresh Tokens) النشطة وتطهير جلسات المستخدم بمجرد نجاح تغيير أو إعادة تعيين كلمة المرور لمنع استغلال الرموز القديمة.

@@ -21,13 +21,12 @@
     - `services/`: تكاملات API (حجوزات، عمليات دفع، تكاملات خارجية، Firebase...).
     - `config/`: إعدادات البيئة، المسارات، مفاتيح API، إدارة العملات واللغات.
     - `App.jsx`: نقطة تشغيل الواجهة الأمامية.
-  - `backend/` (Node.js + Express):
-    - `controllers/`: منطق العمل لجميع الخدمات.
-    - `routes/`: نقاط نهاية API لكل وظائف الموقع.
-    - `models/`: مخططات البيانات (Users، Hotels، Bookings، Transportation، Feedback...).
-    - `middleware/`: الحماية، التوثيق الثنائي، إدارة الجلسات، مكافحة VPN.
-    - `utils/`: JWT، OTP، توليد تقارير PDF، رفع ملفات، أدوات المزامنة مع.
-    - `server.js`: نقطة تشغيل الخادم.
+  - `backend/` (Django + DRF):
+    - `djconfig/`: إعدادات المشروع الرئيسية (`settings.py` لتكوين البيئة والمطابقة مع Redis، و `urls.py` لموجه العناوين العام).
+    - `trips/`: تطبيق إدارة الوجهات والأنشطة والرحلات العامة.
+    - `trip_requests/`: تطبيق إدارة طلبات الحجز وعمليات الـ CRM والملاحظات المؤمنة.
+    - `properties/`: تطبيق إدارة وحدات الإقامة، خطط الأسعار والوفرة اليومية، وقائمة الانتظار (OTA Engine)، ونقاط نهاية مصادقة الشركاء المعزولة ومسار الـ metadata.
+    - `manage.py`: أداة إدارة وتنفيذ الأوامر (الهجرات، الاختبارات، تشغيل خادم التطوير).
   - `ai-agents/`:
     - `assistant-core.js`: إعداد وكيل الذكاء الاصطناعي لخدمة العملاء.
     - `call-center-bot.js`: سكربت مركز الاتصالات الآلي (Chatbot).
@@ -54,7 +53,7 @@
 
 - **الواجهة الأمامية (Frontend):** - React.js + Vite (بـ `camelCase`).
   - Tailwind CSS v4 + Shadcn UI (للتصميم والمكونات الجاهزة).
-  - PWA (Progressive Web App) ليعمل الموقع (Offline) وتصفح الحجوزات بدون إنترنت.
+  - PWA (Progressive Web App) ليعمل الموقع (Offline) وتصفح الحجوزات بدون إنترنت، مدعوماً بمقاطعات اتصال متطورة (Connection Resilience Interceptors) تتتبع حالة `navigator.onLine` لضمان التراجع التلقائي للجلسات عند انقطاع الشبكة وتدهور الاتصال بشكل سلس (Graceful Degradation).
 - **الخوادم (Backend):** - Django + Django REST Framework (DRF) (بـ `snake_case`).
   - PostgreSQL (قاعدة البيانات الأساسية والوحيدة للـ CRM والـ Trips).
 - **التخزين الآمن (Storage & Security):**
