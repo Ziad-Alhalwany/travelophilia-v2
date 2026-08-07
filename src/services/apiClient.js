@@ -11,29 +11,46 @@ export const api = axios.create({
   timeout: 25000,
 });
 
-/** Attach token and handle snake_case request mapping */
+/** Attach token, client telemetry, and handle snake_case request mapping */
 api.interceptors.request.use(
-  (config) => {
+  (_config) => {
     try {
       const token = authStorage?.getAccessToken?.();
       if (token) {
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${token}`;
+        _config.headers = _config.headers || {};
+        _config.headers.Authorization = `Bearer ${token}`;
       }
     } catch {
       // ignore token errors
     }
 
-    // Convert payload/params to snake_case before sending
-    if (config.data) {
-      config.data = toSnakeDeep(config.data);
-    }
-    if (config.params) {
-      config.params = toSnakeDeep(config.params);
+    // Client Telemetry
+    try {
+      const telemetry = {
+        timestamp: new Date().toISOString(),
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "SSR",
+      };
+      _config.headers = _config.headers || {};
+      _config.headers["X-Client-Telemetry"] = JSON.stringify(telemetry);
+    } catch {
+      // ignore telemetry errors
     }
 
+<<<<<<< HEAD
+    // Convert payload/params to snake_case before sending
+    if (_config.data) {
+      _config.data = toSnakeDeep(_config.data);
+    }
+    if (_config.params) {
+      _config.params = toSnakeDeep(_config.params);
+    }
+
+    // Direct mutation on _config reference preserves pristine AbortSignal prototype
+    return _config;
+=======
     // Safely preserve the native AbortSignal instance by returning the intact request config reference
     return config;
+>>>>>>> owner/integration
   },
   (error) => Promise.reject(error)
 );
@@ -129,6 +146,11 @@ api.interceptors.response.use(
     // Attempt token refresh on 401
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
+
+      if (!navigator.onLine) {
+        // Connection drop post-auth: maintain session availability and bypass clearing storage
+        return Promise.reject(error);
+      }
 
       const refresh = authStorage?.getRefreshToken?.();
       if (!refresh) {

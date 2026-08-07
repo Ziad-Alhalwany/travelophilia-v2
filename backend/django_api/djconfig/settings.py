@@ -20,17 +20,19 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load the environment variables from the .env file in the BASE_DIR
-load_dotenv(BASE_DIR / '.env')
+load_dotenv(BASE_DIR / ".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
-    raise ImproperlyConfigured("The SECRET_KEY environment variable is required but was not found.")
+    raise ImproperlyConfigured(
+        "The SECRET_KEY environment variable is required but was not found."
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes', 't')
+DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes", "t")
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 
 
 # Application definition
@@ -44,10 +46,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
-
     "corsheaders",
     "rest_framework",
-
     "trip_requests",
     "trips",
     "properties.apps.PropertiesConfig",
@@ -70,24 +70,24 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-ROOT_URLCONF = 'djconfig.urls'
+ROOT_URLCONF = "djconfig.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'djconfig.wsgi.application'
+WSGI_APPLICATION = "djconfig.wsgi.application"
 
 
 # Database
@@ -105,7 +105,9 @@ if TESTING:
 else:
     DB_PASSWORD = os.getenv("DB_PASSWORD")
     if DB_PASSWORD is None:
-        raise ImproperlyConfigured("The DB_PASSWORD environment variable is required but was not found.")
+        raise ImproperlyConfigured(
+            "The DB_PASSWORD environment variable is required but was not found."
+        )
 
     DATABASES = {
         "default": {
@@ -119,17 +121,14 @@ else:
     }
 
 from datetime import timedelta
+
 REST_FRAMEWORK = {
     # API = JWT فقط (الـ Admin له نظامه session برا DRF)
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-
     # أي endpoint يتقفل تلقائيًا إلا اللي حاطينله AllowAny
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
-
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     # Safety: Rate limiting بسيط
     "DEFAULT_THROTTLE_CLASSES": (
         "rest_framework.throttling.AnonRateThrottle",
@@ -151,26 +150,25 @@ SIMPLE_JWT = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -180,21 +178,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
-# Caching Configuration using Redis Cache with LocMem fallback during tests
-if TESTING:
+# Caching Configuration - Enforcing LocMemCache for local dev (DEBUG=True) and Redis for production
+if DEBUG:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "transient-auth-test-cache",
+            "LOCATION": "travelophilia-unique-local-cache",
         }
     }
 else:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
-            "LOCATION": os.getenv("REDIS_URL", "redis://127.0.0.1:6379/1"),
+            "LOCATION": os.getenv("REDIS_URL"),
         }
     }
-

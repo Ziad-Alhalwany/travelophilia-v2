@@ -15,10 +15,11 @@
 - [ ] بناء محرك البحث والفلاتر (Filters & Sorting).
 - [ ] تجهيز (Destinations Wiki) لدعم الـ SEO.
 
-### 🧠 Sprint 3: نظام الحجز الذكي - الجوهرة (Epic 3)
+### 🧠 Sprint 3: نظام الحجز الذكي - الجوهرة (Epic 3) (In Progress / FE Delivered 🟡)
 
-- [ ] بناء فورم الحجز التفاعلية (Progress bar, Logic).
-- [ ] برمجة (رابط المرافقين السحري Magic Link).
+- [x] بناء فورم الحجز التفاعلية (Tailwind v4 + Shadcn UI في `TripReservationPage.jsx`).
+- [x] برمجة (رابط المرافقين السحري Magic Link) في `AfterSubmitPage.jsx`.
+- [x] توحيد واستقرار الهيكل العلاماتي ومحرك الاتصال (`AppLayout` & `apiClient.js` conflict resolution).
 - [ ] الدفع المقسم (Split Payment) والبيع المتقاطع (Upsells).
 
 ### ⚙️ Sprint 4: إدارة العمليات والموظفين (Epic 4)

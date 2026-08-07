@@ -14,8 +14,7 @@ import MarkupRulesManager from "./pages/admin/MarkupRulesManager";
 import PartnerLoginPage from "./pages/partners/PartnerLoginPage";
 import { CRMGuard, PartnerGuard } from "./middleware/authGuard";
 
-import { Navbar } from "./components/layout/Navbar";
-import { Footer } from "./components/layout/Footer"; 
+import { AppLayout } from "./components/layout/AppLayout";
 
 // TP-OTA-UI-BIND-006A: Global error toast pipeline
 import { Toaster, toast } from "react-hot-toast";
@@ -39,14 +38,9 @@ setGlobalErrorHandler((message) => {
 
 function App() {
   return (
-// السطر ده شيلنا منه كلمة "dark"
-<div className="min-h-screen flex flex-col bg-background text-foreground">
-  <Navbar />
-  
-  {/* السطر ده غيرنا max-w-7xl لـ max-w-[85%] عشان نوسع الموقع */}
-  <main className="flex-1 w-full max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
-    <Routes>
-
+    <>
+      <Routes>
+        <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/destinations/:slug" element={<TripDetails />} />
           <Route path="/trips/:slug" element={<TripDetails />} />
@@ -70,14 +64,12 @@ function App() {
           </Route>
           
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-      
-      <Footer />
+        </Route>
+      </Routes>
 
       {/* TP-OTA-UI-BIND-006A: Global toast notification container */}
       <Toaster position="top-right" reverseOrder={false} />
-    </div>
+    </>
   );
 }
 
