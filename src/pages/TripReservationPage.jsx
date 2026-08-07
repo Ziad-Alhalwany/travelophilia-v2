@@ -7,6 +7,8 @@ import {
   submitTripRequest,
   generateTripRequestCode,
 } from "../services/apiClient";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 // =========================
 // Helpers
@@ -394,6 +396,25 @@ export default function TripReservationPage() {
         res?.data?.trip_code ||
         res?.data?.tripCode;
 
+      const submitPayload = {
+        tripCode: createdId || generatedCode || operationalTripId,
+        fullName: String(form.fullName || "").trim(),
+        leaderPhone: `${normalizedDial}${phoneLocalDigits}`,
+        email: String(form.email || "").trim(),
+        originCity: String(form.originCity || "").trim(),
+        destinationCity: String(form.destinationCity || "").trim(),
+        departDate: form.departDate,
+        returnDate: form.returnDate,
+        adults: safeAdults,
+        children: safeChildren,
+        totalPax: safeAdults + safeChildren,
+        companionsMode: safeChildren > 0 || form.couplesAnswer === "YES" ? "LATER" : "SOLO",
+      };
+
+      try {
+        sessionStorage.setItem("tp_last_submit_v1", JSON.stringify(submitPayload));
+      } catch {}
+
       setStatusMsg({
         type: "ok",
         text: createdId
@@ -414,90 +435,63 @@ export default function TripReservationPage() {
     }
   }
 
-  const styles = (
-    <style>{`
-      .res-wrap{max-width:1100px;margin:0 auto;padding:1.25rem 1rem 2rem;}
-      .res-title{font-size:1.55rem;font-weight:950;margin:0;}
-      .res-sub{margin:.25rem 0 0;color:rgba(255,255,255,.65);}
-      .res-card{margin-top:1rem;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);border-radius:18px;padding:1rem;}
-      .res-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem;}
-      @media(max-width:900px){.res-grid{grid-template-columns:1fr;}}
-      .res-field label{display:block;font-size:.82rem;color:rgba(255,255,255,.68);margin-bottom:.25rem;}
-      .res-input,.res-select,.res-textarea{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.92);padding:.62rem .75rem;outline:none;}
-      .res-row{display:flex;gap:.6rem;align-items:end;}
-      .res-row>*{flex:1;}
-      .res-actions{display:flex;gap:.6rem;margin-top:.9rem;flex-wrap:wrap;}
-      .res-btn{border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:rgba(255,255,255,.92);padding:.65rem .95rem;font-weight:900;cursor:pointer;}
-      .res-btn.primary{border-color:rgba(0,216,192,.35);background:rgba(0,216,192,.12);}
-      .res-btn:disabled{opacity:.55;cursor:not-allowed;}
-      .res-msg{margin-top:.8rem;padding:.75rem .85rem;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);}
-      .res-msg.ok{border-color:rgba(0,216,192,.30);background:rgba(0,216,192,.08);}
-      .res-msg.err{border-color:rgba(255,80,80,.30);background:rgba(255,80,80,.08);}
-      .res-check{display:flex;gap:.55rem;align-items:flex-start;padding:.65rem .7rem;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);}
-      .res-check input{margin-top:.2rem;}
-      .res-muted{color:rgba(255,255,255,.65);font-size:.9rem;}
-      .res-radio{display:flex;gap:.6rem;flex-wrap:wrap;}
-      .res-pill{display:inline-flex;gap:.45rem;align-items:center;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);padding:.55rem .7rem;border-radius:999px;cursor:pointer;}
-      .res-pill input{margin:0;}
-    `}</style>
-  );
-
   const tripTitle = trip?.name || trip?.title || "Reserve this trip";
 
   return (
-    <div className="res-wrap">
-      {styles}
-
-      <h1 className="res-title">{tripTitle}</h1>
-      <p className="res-sub">
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">{tripTitle}</h1>
+      <p className="mt-1 text-sm text-white/65">
         {tripLoading
           ? "Loading trip details..."
           : trip?.location || "This will create a CRM lead automatically."}
       </p>
 
-      {tripErr ? <div className="res-msg err">{tripErr}</div> : null}
+      {tripErr ? (
+        <div className="mt-4 p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 text-sm font-medium">
+          {tripErr}
+        </div>
+      ) : null}
 
-      <div className="res-card">
-        <div style={{ fontWeight: 950 }}>Reservation form</div>
-        <p className="res-muted" style={{ marginTop: ".35rem" }}>
-          لازم نملأ الحقول المطلوبة عشان الـ backend بيراجع شروط (Terms +
-          Documents + Identity).
+      <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md shadow-2xl">
+        <h2 className="text-lg font-extrabold text-white">Reservation form</h2>
+        <p className="mt-1 text-xs text-white/60">
+          لازم نملأ الحقول المطلوبة عشان الـ backend بيراجع شروط (Terms + Documents + Identity).
         </p>
 
         <form onSubmit={onSubmit}>
-          <div className="res-grid">
-            <div className="res-field">
-              <label>Full name *</label>
-              <input
-                className="res-input"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Full name *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                 value={form.fullName}
                 onChange={(e) => setField("fullName", e.target.value)}
               />
             </div>
 
-            <div className="res-field">
-              <label>Email *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Email *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                 value={form.email}
                 onChange={(e) => setField("email", e.target.value)}
               />
             </div>
 
-            <div className="res-field">
-              <label>Phone *</label>
-              <div className="res-row">
-                <div>
-                  <input
-                    className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Phone *</label>
+              <div className="flex gap-2 items-center">
+                <div className="w-24 shrink-0">
+                  <Input
+                    className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                     value={form.dialCode}
                     onChange={(e) => setField("dialCode", e.target.value)}
                     placeholder="+20"
                   />
                 </div>
-                <div>
-                  <input
-                    className="res-input"
+                <div className="flex-1">
+                  <Input
+                    className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                     value={form.phoneLocal}
                     onChange={(e) => setField("phoneLocal", e.target.value)}
                     placeholder="Local number"
@@ -506,31 +500,32 @@ export default function TripReservationPage() {
               </div>
             </div>
 
-            <div className="res-field">
-              <label>WhatsApp</label>
-              <div className="res-check">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">WhatsApp</label>
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-white/[0.03]">
                 <input
                   type="checkbox"
+                  className="mt-0.5 rounded border-white/20 bg-white/5 accent-cyan-500 cursor-pointer"
                   checked={form.phoneHasWhatsapp}
                   onChange={(e) =>
                     setField("phoneHasWhatsapp", e.target.checked)
                   }
                 />
                 <div>
-                  <div style={{ fontWeight: 850 }}>
+                  <div className="text-xs font-bold text-white">
                     WhatsApp on the same phone number
                   </div>
-                  <div className="res-muted">
-                    لو لأ → هتظهر خانات رقم واتساب منفصل
+                  <div className="text-xs text-white/60">
+                    لو لأ ← هتظهر خانات رقم واتساب منفصل
                   </div>
                 </div>
               </div>
 
               {!form.phoneHasWhatsapp ? (
-                <div className="res-row" style={{ marginTop: ".6rem" }}>
-                  <div>
-                    <input
-                      className="res-input"
+                <div className="flex gap-2 items-center mt-2">
+                  <div className="w-24 shrink-0">
+                    <Input
+                      className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                       value={form.whatsappDialCode}
                       onChange={(e) =>
                         setField("whatsappDialCode", e.target.value)
@@ -538,9 +533,9 @@ export default function TripReservationPage() {
                       placeholder="+20"
                     />
                   </div>
-                  <div>
-                    <input
-                      className="res-input"
+                  <div className="flex-1">
+                    <Input
+                      className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                       value={form.whatsappLocal}
                       onChange={(e) =>
                         setField("whatsappLocal", e.target.value)
@@ -552,10 +547,10 @@ export default function TripReservationPage() {
               ) : null}
             </div>
 
-            <div className="res-field">
-              <label>Gender *</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Gender *</label>
               <select
-                className="res-select"
+                className="w-full h-8 rounded-lg border border-white/12 bg-white/5 px-2.5 py-1 text-sm text-white focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 dark:bg-[#101b23]"
                 value={form.leaderGender}
                 onChange={(e) => setField("leaderGender", e.target.value)}
               >
@@ -564,10 +559,10 @@ export default function TripReservationPage() {
               </select>
             </div>
 
-            <div className="res-field">
-              <label>Age *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Age *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                 type="number"
                 min="1"
                 value={form.leaderAge}
@@ -575,29 +570,29 @@ export default function TripReservationPage() {
               />
             </div>
 
-            <div className="res-field">
-              <label>Nationality *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Nationality *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                 value={form.nationality}
                 onChange={(e) => setField("nationality", e.target.value)}
               />
             </div>
 
-            <div className="res-field">
-              <label>Resident country *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Resident country *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                 value={form.residentCountry}
                 onChange={(e) => setField("residentCountry", e.target.value)}
               />
             </div>
 
             {isEgyptian ? (
-              <div className="res-field">
-                <label>National ID * (Egyptians)</label>
-                <input
-                  className="res-input"
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-white/70">National ID * (Egyptians)</label>
+                <Input
+                  className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                   value={form.nationalId}
                   onChange={(e) => setField("nationalId", e.target.value)}
                   placeholder="Digits only"
@@ -605,19 +600,19 @@ export default function TripReservationPage() {
               </div>
             ) : (
               <>
-                <div className="res-field">
-                  <label>Passport number *</label>
-                  <input
-                    className="res-input"
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-white/70">Passport number *</label>
+                  <Input
+                    className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                     value={form.passportNumber}
                     onChange={(e) => setField("passportNumber", e.target.value)}
                   />
                 </div>
 
-                <div className="res-field">
-                  <label>Entry status for Egypt *</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-white/70">Entry status for Egypt *</label>
                   <select
-                    className="res-select"
+                    className="w-full h-8 rounded-lg border border-white/12 bg-white/5 px-2.5 py-1 text-sm text-white focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 dark:bg-[#101b23]"
                     value={form.entryStatusForEgypt}
                     onChange={(e) =>
                       setField("entryStatusForEgypt", e.target.value)
@@ -630,10 +625,10 @@ export default function TripReservationPage() {
               </>
             )}
 
-            <div className="res-field">
-              <label>Origin city *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Origin city *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 value={form.originCity}
                 onChange={(e) => setField("originCity", e.target.value)}
                 disabled={originLocked}
@@ -641,10 +636,10 @@ export default function TripReservationPage() {
               />
             </div>
 
-            <div className="res-field">
-              <label>Destination *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Destination *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 value={form.destinationCity}
                 onChange={(e) => setField("destinationCity", e.target.value)}
                 disabled={destinationLocked}
@@ -652,30 +647,30 @@ export default function TripReservationPage() {
               />
             </div>
 
-            <div className="res-field">
-              <label>Depart date *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Depart date *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                 type="date"
                 value={form.departDate}
                 onChange={(e) => setField("departDate", e.target.value)}
               />
             </div>
 
-            <div className="res-field">
-              <label>Return date *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Return date *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                 type="date"
                 value={form.returnDate}
                 onChange={(e) => setField("returnDate", e.target.value)}
               />
             </div>
 
-            <div className="res-field">
-              <label>Adults *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Adults *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                 type="number"
                 min="1"
                 value={form.adults}
@@ -683,10 +678,10 @@ export default function TripReservationPage() {
               />
             </div>
 
-            <div className="res-field">
-              <label>Children *</label>
-              <input
-                className="res-input"
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-white/70">Children *</label>
+              <Input
+                className="bg-white/5 border-white/12 text-white placeholder:text-white/40 focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/40 rounded-xl"
                 type="number"
                 min="0"
                 value={form.children}
@@ -694,12 +689,13 @@ export default function TripReservationPage() {
               />
             </div>
 
-            <div className="res-field" style={{ gridColumn: "1 / -1" }}>
-              <label>Are you traveling as a couple? *</label>
-              <div className="res-radio">
-                <label className="res-pill">
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <label className="text-xs font-semibold text-white/70">Are you traveling as a couple? *</label>
+              <div className="flex gap-3 items-center mt-1">
+                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/12 bg-white/5 text-sm text-white font-medium cursor-pointer hover:bg-white/10 transition-colors">
                   <input
                     type="radio"
+                    className="accent-cyan-500 cursor-pointer"
                     name="couplesAnswer"
                     value="NO"
                     checked={form.couplesAnswer === "NO"}
@@ -708,9 +704,10 @@ export default function TripReservationPage() {
                   NO
                 </label>
 
-                <label className="res-pill">
+                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/12 bg-white/5 text-sm text-white font-medium cursor-pointer hover:bg-white/10 transition-colors">
                   <input
                     type="radio"
+                    className="accent-cyan-500 cursor-pointer"
                     name="couplesAnswer"
                     value="YES"
                     checked={form.couplesAnswer === "YES"}
@@ -721,10 +718,10 @@ export default function TripReservationPage() {
               </div>
             </div>
 
-            <div className="res-field" style={{ gridColumn: "1 / -1" }}>
-              <label>Note</label>
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <label className="text-xs font-semibold text-white/70">Note</label>
               <textarea
-                className="res-textarea"
+                className="w-full rounded-xl border border-white/12 bg-white/5 p-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
                 rows={4}
                 value={form.note}
                 onChange={(e) => setField("note", e.target.value)}
@@ -732,16 +729,17 @@ export default function TripReservationPage() {
               />
             </div>
 
-            <div className="res-field" style={{ gridColumn: "1 / -1" }}>
-              <div className="res-check">
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <div className="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-white/[0.03]">
                 <input
                   type="checkbox"
+                  className="mt-0.5 rounded border-white/20 bg-white/5 accent-cyan-500 cursor-pointer"
                   checked={form.termsAccepted}
                   onChange={(e) => setField("termsAccepted", e.target.checked)}
                 />
                 <div>
-                  <div style={{ fontWeight: 900 }}>I accept the terms *</div>
-                  <div className="res-muted">
+                  <div className="text-xs font-bold text-white">I accept the terms *</div>
+                  <div className="text-xs text-white/60">
                     (Required by backend validation)
                   </div>
                 </div>
@@ -749,20 +747,21 @@ export default function TripReservationPage() {
             </div>
 
             {docsNeeded ? (
-              <div className="res-field" style={{ gridColumn: "1 / -1" }}>
-                <div className="res-check">
+              <div className="flex flex-col gap-1.5 md:col-span-2">
+                <div className="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-white/[0.03]">
                   <input
                     type="checkbox"
+                    className="mt-0.5 rounded border-white/20 bg-white/5 accent-cyan-500 cursor-pointer"
                     checked={form.docsAcknowledged}
                     onChange={(e) =>
                       setField("docsAcknowledged", e.target.checked)
                     }
                   />
                   <div>
-                    <div style={{ fontWeight: 900 }}>
+                    <div className="text-xs font-bold text-white">
                       I acknowledge required documents *
                     </div>
-                    <div className="res-muted">
+                    <div className="text-xs text-white/60">
                       Required because{" "}
                       {Number(form.children || 0) > 0
                         ? "children > 0"
@@ -775,19 +774,23 @@ export default function TripReservationPage() {
             ) : null}
           </div>
 
-          <div className="res-actions">
-            <button
-              className="res-btn primary"
+          <div className="flex gap-3 mt-6 flex-wrap">
+            <Button
+              className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 font-bold rounded-xl px-6 py-2.5 shadow-lg shadow-cyan-500/10 cursor-pointer"
               type="submit"
               disabled={busy || tripLoading}
             >
               {busy ? "Submitting..." : "Submit reservation"}
-            </button>
+            </Button>
           </div>
 
           {statusMsg.text ? (
             <div
-              className={`res-msg ${statusMsg.type === "ok" ? "ok" : "err"}`}
+              className={`mt-4 p-3.5 rounded-xl border text-sm font-medium ${
+                statusMsg.type === "ok"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                  : "border-rose-500/30 bg-rose-500/10 text-rose-300"
+              }`}
             >
               {statusMsg.text}
             </div>
