@@ -19,8 +19,8 @@
 
 | File | Route | Purpose |
 |------|-------|---------|
-| `Home.jsx` | `/` | الصفحة الرئيسية — Hero section + trip cards grid (يستخدم `<TripCard>`) |
-| `TripDetails.jsx` | `/destinations/:slug`, `/trips/:slug` | تفاصيل الرحلة — FX rates, checkout, coupons, activities, media, reviews, mobile sheet |
+| `HomePage.jsx` | `/` | الصفحة الرئيسية — Hero section + trip cards grid (يستخدم `<TripCard>`) |
+| `TripDetailsPage.jsx` | `/destinations/:slug`, `/trips/:slug` | تفاصيل الرحلة — FX rates, checkout, coupons, activities, media, reviews, mobile sheet |
 | `ChooseYourTripPage.jsx` | `/choose-your-trip` | قائمة الرحلات مع tabs (DAYUSE/STAY) + filters + sorting |
 | `CustomizeYourTripPage.jsx` | `/customize-your-trip` | نموذج طلب رحلة مخصصة |
 | `TripReservationPage.jsx` | `/reserve/:slug` | نموذج حجز الرحلة |
@@ -29,8 +29,10 @@
 | `ActivitiesPage.jsx` | (لا يوجد route حالياً) | أنشطة |
 | `BeAmbassadorPage.jsx` | (لا يوجد route حالياً) | نموذج سفراء |
 | `BeOneOfUsPage.jsx` | (لا يوجد route حالياً) | صفحة تجنيد |
-| `CRMLeadsPage.jsx` | `/crm/leads` | لوحة CRM leads (ملاحظة: الدخول لـ `/crm` يحول تلقائياً إلى هنا) |
-| `CRMLoginPage.jsx` | `/crm/login` | صفحة تسجيل الدخول لموظفي CRM |
+| `CRMLeadsPage.jsx` | `/crm/leads` | لوحة CRM leads (ملاحظة: الدخول لـ `/crm` يحول تلقائياً إلى هنا - محمية بـ `CRMGuard`) |
+| `CRMLoginPage.jsx` | `/crm/login` | صفحة تسجيل الدخول لموظفي الـ CRM (تتصل بـ Django Auth) |
+| `partners/PartnerLoginPage.jsx` | `/partners/login` | صفحة تسجيل الدخول لشركاء وموردي B2B (Two-Step Login Wizard متصل بـ `/api/auth/partners/token/`) |
+| `partners/InventoryDashboard.jsx` | `/partners/inventory` | لوحة تحكم مخزن وأسعار وإتاحة غرف الشركاء B2B (محمية بـ `PartnerGuard` وتستعلم من مسار metadata المعزول) |
 | `CollaborateWithUsPage.jsx` | (لا يوجد route حالياً) | نموذج تعاون |
 | `DestinationPage.jsx` | (لا يوجد route حالياً) | صفحة الوجهة |
 | `SupportTeamPage.jsx` | (لا يوجد route حالياً) | فريق الدعم |
@@ -87,8 +89,16 @@
 | File | Purpose |
 |------|---------|
 | `apiClient.js` | Axios instance + API/service bindings: `getTrips()`, `getTripBySlug()`, `getDestinationActivities()`, `submitCustomTrip()`, `generateTripRequestCode()`, `submitTripRequest()`, `fetchPropertyAvailability()`, `bulkUpdateInventory()`, `fetchSearchAggregator()`, `submitWaitlistQueue()`, `setGlobalErrorHandler()`, `createCancellableRequest()` |
-| `authStorage.js` | JWT token storage (localStorage) |
-| `crmAuth.js` | CRM authentication service |
+| `authStorage.js` | مدير حفظ وقراءة رموز JWT للشركاء والموردين B2B في الـ `localStorage` تحت المفاتيح: `travelophilia_access_token` و `travelophilia_refresh_token` |
+| `crmAuth.js` | مدير مصادقة وحفظ رموز JWT لموظفي الـ CRM والـ Staff في الـ `localStorage` تحت المفاتيح: `tp_crm_access` و `tp_crm_refresh` |
+
+---
+
+## `/src/middleware` — Route Isolation Guards
+
+| File | Purpose |
+|------|---------|
+| `authGuard.jsx` | يحتوي على حراس مصادقة المسارات وعزل الموارد للواجهة الأمامية لمنع التخطي غير المصرح به:<br>• **`CRMGuard`**: يتحقق من توكن الموظفين JWT الصالح عبر `crmAuth` ويحمي مسار `/crm/*`.<br>• **`PartnerGuard`**: يتحقق من صلاحية شكل توكن الشركاء JWT (Well-formed JWT) ويحمي مسار `/partners/*`. |
 
 ---
 
