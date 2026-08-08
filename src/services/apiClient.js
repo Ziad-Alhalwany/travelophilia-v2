@@ -36,7 +36,6 @@ api.interceptors.request.use(
       // ignore telemetry errors
     }
 
-<<<<<<< HEAD
     // Convert payload/params to snake_case before sending
     if (_config.data) {
       _config.data = toSnakeDeep(_config.data);
@@ -47,10 +46,6 @@ api.interceptors.request.use(
 
     // Direct mutation on _config reference preserves pristine AbortSignal prototype
     return _config;
-=======
-    // Safely preserve the native AbortSignal instance by returning the intact request config reference
-    return config;
->>>>>>> owner/integration
   },
   (error) => Promise.reject(error)
 );
