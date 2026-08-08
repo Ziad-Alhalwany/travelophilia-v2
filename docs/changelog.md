@@ -18,7 +18,7 @@
 
 - **Centralized Brand Layout (`App.jsx`):** تطبيق `AppLayout` كواجهة تجميع مسارات أساسية (`<Route element={<AppLayout />}>`) لتطبيق التدرج الشعاعي الفاخر (`bg-[radial-gradient(circle_at_top,#172634_0,#05090d_55%,#020306_100%)]`) والحدود البصرية الموحدة على كامل التطبيق.
 - **TripReservationPage Refactoring (`TripReservationPage.jsx`):** تحويل صفحة حجز الرحلات بالكامل لاستخدام فئات Tailwind v4 المباشرة ومكونات Shadcn UI الرسمية (`Input`, `Button`) وإزالة أكواد الـ `<style>` المدمجة يدوياً.
-- **React V2 SPA Routing Overhaul:** استبدال المكونات القديمة لصفحة العميل `Home.jsx` و `TripDetails.jsx` بنسخ الإنتاج الحديثة `HomePage.jsx` و `TripDetailsPage.jsx` مع لف المسارات بالكامل بحراس الحماية `CRMGuard` و `PartnerGuard` في ملف `authGuard.jsx`.
+- **React V2 SPA Routing Overhaul:** إعادة تنظيم مسارات تطبيق الواجهة الأمامية (`Home.jsx` و `TripDetails.jsx`) ولف المسارات الحساسة بحراس الحماية `CRMGuard` و `PartnerGuard` في ملف `authGuard.jsx`.
 - **Project Structure Transition:** استبعاد كافة ملفات إعدادات Tailwind v3 القديمة (`tailwind.config.js`, `postcss.config.js`) بالكامل واعتماد محرك Tailwind v4 الافتراضي. تنظيف وتطهير هيكل Section 0 في ملف PRD (`requirements.md`) لاستبدال هيكلية Node.js/Express بهيكلية Django/DRF الحقيقية.
 
 ### Fixed
