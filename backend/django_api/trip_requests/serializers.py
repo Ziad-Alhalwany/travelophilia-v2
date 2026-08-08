@@ -1,4 +1,5 @@
 # backend/django_api/trip_requests/serializers.py
+import re
 from django.apps import apps
 from django.db import transaction
 from rest_framework import serializers
@@ -279,7 +280,25 @@ class TripRequestCreateSerializer(serializers.ModelSerializer):
                     if not isinstance(item, dict):
                         raise serializers.ValidationError({json_field: ["All items in the list must be objects."]})
 
-        # 3) Business rules
+        # 3) Strict PII Identity Regex Validation
+        id_type = str(attrs.get("leader_identity_type") or "").strip().upper()
+        id_num = str(attrs.get("leader_identity_number") or "").strip()
+
+        if id_num:
+            if "PASSPORT" in id_type or id_type in ("PASSPORT", "FOREIGN_PASSPORT"):
+                # Foreigner Passport: Alpha-numeric format between 6 and 15 characters
+                if not re.match(r"^[A-Za-z0-9]{6,15}$", id_num):
+                    raise serializers.ValidationError(
+                        {"leader_identity_number": ["Foreigner Passport must be alphanumeric and between 6 and 15 characters."]}
+                    )
+            else:
+                # Egyptian National ID: Exactly 14 numeric digits
+                if not re.match(r"^\d{14}$", id_num):
+                    raise serializers.ValidationError(
+                        {"leader_identity_number": ["Egyptian National ID must consist of exactly 14 numeric digits."]}
+                    )
+
+        # 4) Business rules
         if attrs.get("terms_accepted") is not True:
             raise serializers.ValidationError(
                 {"terms_accepted": ["You must accept terms."]}
