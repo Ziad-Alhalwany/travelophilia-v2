@@ -36,5 +36,6 @@
 - [x] TP-FIX-FE2-APICLIENT-CONFLICT-RESOLUTION-001: Resolve Git merge conflict markers in src/services/apiClient.js and verify ES modules syntax (Assigned to: `@FE2`)
 - [x] TP-DOC-SPRINT3-GLOBAL-SYNC-001: Synchronize central documentation for Sprint 3 FE & Integration accomplishments (Assigned to: `@Doc`)
 - [x] TP-BE-IMPL-001: Remove slug date-stripping + add strict lookup & concurrency tests (owner/integration: e100a77)
+- [x] TP-AUDIT-DOC-FULL-SYSTEM-001: Audit project documentation alignment against implementation reality and reconcile PRD & project maps (Assigned to: `@Doc`)
 
 </div>
