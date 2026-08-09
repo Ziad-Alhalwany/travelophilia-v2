@@ -2,6 +2,27 @@
 
 # Changelog — Travelophilia
 
+## [Sprint 3.5] — 2026-08-09
+
+### Added
+
+- **ComingSoonPlaceholder Component (`ComingSoonPlaceholder.jsx`):** إنشاء مكون فاخر ناعم بـ Radial Glows وخلفية زجاجية متوافق مع هوية Travelophilia لعرض رسائل حجز الخدمات قريباً، وتوصيله بالمسارات المستقلة 12 (`/about`, `/activities`, `/visa`, `/be-ambassador`, `/be-one-of-us`, `/collaborate-with-us`, `/destinations`, `/support`, `/ticket-flight`, `/transportation`, `/work-with-us`, `/coming-soon`).
+- **B-Tree Database Index Optimization:** إضافة فهارس B-Tree صريحة (`db_index=True`) على حقول `Customer.phone` و `Customer.email` و `TripRequest.customer` و `TripRequest.created_at` لتسريع استعلامات تصفية وترتيب الـ CRM وقاعدة البيانات من $O(N)$ إلى $O(\log N)$.
+
+### Changed
+
+- **Frontend Component Recycling & Shadcn Cleanup:** تطهير وحذف 11 مكون قديم مهمل من جذر `src/components/` (مثل `Button.jsx`, `TripCard.jsx`, `Tag.jsx`, `Navbar.jsx`, `Footer.jsx`) وتوحيد الاستدعاءات عبر `src/components/layout/` و `src/components/shared/` و `src/components/ui/`.
+- **CSS Tokens & Tailwind v4 Migration:** استخراج وتوحيد كافة متغيرات التصميم والانيميشن المخصصة (`skeleton-loading`, `pulseGlow`, `float`) داخل كتلة `@theme inline` في `src/styles.css` وحذف مجلد الـ CSS اليتيم غير المستخدم `src/styles/`.
+- **CRM Query Optimization (N+1 SQL Elimination):** تحسين استعلامات `TripRequestCRMListView` باستخدام `.select_related("assigned_to", "customer")` لمنع مشكلة N+1 SQL وتدفق الاستعلامات المكررة.
+
+### Fixed
+
+- **B2B Bulk Update Security Hardening (`PropertyAvailabilityBulkUpdateView`):** سد الثغرة الأمنية واستبدال `AllowAny` بـ `IsAuthenticated` مع التحقق الصارم من ملكية المورد `accommodation.vendor.user == request.user` أو صلاحية الـ Staff لمنع التعديل غير المصرح به على أسعار وإتاحة غرف الفنادق.
+- **CRM Search Lookup Crash Fix:** تصحيح فلاتر البحث في `TripRequestCRMListView` لاستخدام العلاقات المباشرة `customer__full_name__icontains`, `customer__phone__icontains`, `customer__email__icontains`, `customer__identity_last4__icontains` لمنع انهيار السيرفر أثناء البحث.
+- **Shadcn `.tsx` Duplication Purge:** حذف كافة ملفات `.tsx` المُضاعفة في `src/components/ui/` (`card.tsx`, `input.tsx`, `label.tsx`, `form.tsx`) والاعتماد الحصري على مكونات `.jsx` الموحدة وتزويد `input.jsx` بـ `React.forwardRef`.
+
+---
+
 ## [Unreleased]
 
 ### Added

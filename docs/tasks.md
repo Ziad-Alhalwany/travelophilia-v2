@@ -37,5 +37,9 @@
 - [x] TP-DOC-SPRINT3-GLOBAL-SYNC-001: Synchronize central documentation for Sprint 3 FE & Integration accomplishments (Assigned to: `@Doc`)
 - [x] TP-BE-IMPL-001: Remove slug date-stripping + add strict lookup & concurrency tests (owner/integration: e100a77)
 - [x] TP-AUDIT-DOC-FULL-SYSTEM-001: Audit project documentation alignment against implementation reality and reconcile PRD & project maps (Assigned to: `@Doc`)
+- [x] TP-FE1-SPRINT3.5-CLEANUP-HARDENING-001: Frontend hardening, routing overhaul, ComingSoonPlaceholder integration, Shadcn UI cleanup, and CSS recycling (Assigned to: `@FE1`)
+- [x] TP-BE1-SPRINT3.5-SECURITY-CRM-HARDENING-001: B2B bulk update security hardening (IsAuthenticated + Vendor check) and CRM list N+1 query optimization (Assigned to: `@BE1`)
+- [x] TP-BE2-SPRINT3.5-INDEX-AUDIT-001: B-Tree index optimization for Customer (phone, email) and TripRequest (customer, created_at) (Assigned to: `@BE2`)
+- [x] TP-DOC-SPRINT3.5-FULL-SYSTEM-SYNC-001: Master forensic documentation sync across PRD, FRONTEND_MAP, BACKEND_MAP, changelog, and tasks board (Assigned to: `@Doc`)
 
 </div>

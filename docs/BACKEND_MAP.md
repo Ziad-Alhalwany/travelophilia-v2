@@ -1,6 +1,6 @@
 > **ملاحظة صارمة (STRICT RULE):**
 > يجب مراجعة هذا الملف قبل كتابة أي Import أو مسار API لتجنب الاستدعاءات الخاطئة (Hallucinations).
-> آخر تحديث: 2026-08-08 — Audit Commit: `TP-AUDIT-DOC-FULL-SYSTEM-001`
+> آخر تحديث: 2026-08-09 — Audit Commit: `TP-DOC-SPRINT3.5-FULL-SYSTEM-SYNC-001`
 
 # Backend Architecture Map (Travelophilia)
 
@@ -40,13 +40,15 @@
 **الملفات والنماذج (Files & Models):** (موجودة في `backend/django_api/trip_requests/`)
 - `models.py`:
   5. **`ReservationSequence` (عداد تسلسل الحجوزات R-value)**
-  6. **`Customer` (بيانات العميل المؤمنة بـ `identity_hash` و `identity_last4`)**
-  7. **`TripRequest` (طلب الرحلة والحجوزات الفردية والأكواد الذكية)**
+  6. **`Customer` (بيانات العميل المؤمنة بـ `identity_hash` و `identity_last4` والمفهرسة بـ B-Tree indexes على `phone` و `email`)**
+  7. **`TripRequest` (طلب الرحلة والحجوزات الفردية والأكواد الذكية والمفهرسة بـ B-Tree indexes على `customer` و `created_at`)**
   8. **`TripRequestNote` (ملاحظات الـ CRM للعميل)**
 - `city_codes.py`: تحويل وجدول أكواد المدن المصرية.
 - `permissions.py`: كلاس الصلاحيات `IsCRMUser` لحماية مسارات الـ CRM.
 - `serializers.py`: DRF Serializers مع التحقق من الهويات والمرافقين وأعمار الأطفال.
-- `views.py` / `urls.py`: endpoints تسجيل الحجوزات وإدارة الـ Leads للموظفين.
+- `views.py`:
+  - **`TripRequestCRMListView`**: محسّنة بـ `.select_related("assigned_to", "customer")` للقضاء التام على مشكلة N+1 SQL، وتدعم البحث المتعدد عبر حقول `customer__` المباشرة (`full_name`, `phone`, `email`, `identity_last4`).
+- `urls.py`: endpoints تسجيل الحجوزات وإدارة الـ Leads للموظفين.
 - `tests.py`: وحدة اختبارات مسارات الحجز والـ CRM.
 
 ---
@@ -66,7 +68,9 @@
   16. **`VendorProfile` (ملف تعريف المورد B2B)**
 - `otp_service.py`: خدمة توليد والتحقق من رموز OTP الرقمية لشركاء B2B عبر Redis.
 - `serializers.py`: Serializers للبحث المجمع، الميتاداتا، وتحديث المخزون.
-- `views.py` / `urls.py`: endpoints محرك البحث، تحديث الأسعار الجماعي، الميتاداتا، ومصادقة B2B (`partners_auth`).
+- `views.py`:
+  - **`PropertyAvailabilityBulkUpdateView`**: محمية بـ `permission_classes = [IsAuthenticated]` مع التحقق الصارم من ملكية المورد `accommodation.vendor.user == request.user` أو صلاحية `request.user.is_staff` لمنع تعديلات الأسعار غير المصرح بها.
+- `urls.py`: endpoints محرك البحث، تحديث الأسعار الجماعي، الميتاداتا، ومصادقة B2B (`partners_auth`).
 - `tests.py`: اختبارات شاملة لمحرك البحث، عزل الموردين، وقواعد الربحية.
 
 ---

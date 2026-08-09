@@ -21,24 +21,17 @@
     - `services/`: تكاملات API (حجوزات، عمليات دفع، تكاملات خارجية، Firebase...).
     - `config/`: إعدادات البيئة، المسارات، مفاتيح API، إدارة العملات واللغات.
     - `App.jsx`: نقطة تشغيل الواجهة الأمامية.
-  - `backend/` (Django + DRF):
+  - `backend/django_api/` (Django + DRF Core Backend):
     - `djconfig/`: إعدادات المشروع الرئيسية (`settings.py` لتكوين البيئة والمطابقة مع Redis، و `urls.py` لموجه العناوين العام).
     - `trips/`: تطبيق إدارة الوجهات والأنشطة والرحلات العامة.
     - `trip_requests/`: تطبيق إدارة طلبات الحجز وعمليات الـ CRM والملاحظات المؤمنة.
     - `properties/`: تطبيق إدارة وحدات الإقامة، خطط الأسعار والوفرة اليومية، وقائمة الانتظار (OTA Engine)، ونقاط نهاية مصادقة الشركاء المعزولة ومسار الـ metadata.
     - `manage.py`: أداة إدارة وتنفيذ الأوامر (الهجرات، الاختبارات، تشغيل خادم التطوير).
-  - `ai-agents/`:
-    - `assistant-core.js`: إعداد وكيل الذكاء الاصطناعي لخدمة العملاء.
-    - `call-center-bot.js`: سكربت مركز الاتصالات الآلي (Chatbot).
-    - `prompts/`: تعليمات وسيناريوهات الردود.
-  - `integrations/`:
-    - `payments/`: ربط Paymob، Stripe، Instapay، PayPal (وتوسعات مستقبلية Apple Pay / Google Pay).
-    - `whatsapp-api/`: التكامل مع WhatsApp Business الرسمي.
-    - `elevenlabs-ai/`: توليد الصوتيات المتعددة اللغات للمحتوى التسويقي.
-  - `analytics-dashboard/`:
-    - لوحات تحكم (admin، financial، destination-report، partner-dashboard، user-dashboard).
-    - عرض الإحصائيات، عدد الزوار، المعاملات، التحويلات، تقييم الأداء.
-  - `data-seed/`: بيانات أولية للفنادق، الرحلات، الأنشطة، المزودين.
+  - *(المجلدات التالية تمثل الهيكلية المستهدفة لخصائص خريطة الطريق المستقبلية Target Roadmap Architecture)*:
+    - `ai-agents/`: وكيل الذكاء الاصطناعي ومركز الاتصالات الآلي.
+    - `integrations/`: الربط البرمجي لخدمات الدفع والواتساب والصوتيات.
+    - `analytics-dashboard/`: لوحات تحكم الإحصائيات المتقدمة.
+    - `data-seed/`: سكريبتات وبيانات التغذية الأولية.
   - `docs/`: توثيق (requirements، API docs، diagrams).
   - `README.md`: توثيق شامل للتشغيل والبناء.
   - `.env`: مفاتيح حساسة (- مزوّدي الدفع، البريد...).
